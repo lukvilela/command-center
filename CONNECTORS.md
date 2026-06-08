@@ -37,6 +37,25 @@ No seletor de projeto (topo do sidebar) → botão **🐙 Sync**.
              └─▶ CCNative.setGithub(overlay) → app renderiza página GitHub/badges
 ```
 
+### Vários repos
+O projeto absorve **N repos** ao mesmo tempo. Gerencie em **🔌 Fontes** (no
+seletor de projeto): cole vários `owner/name` (um por linha), remova, e
+"Sincronizar tudo" puxa todos de uma vez. O Sync itera todas as sources
+`github_repo` e mescla os resultados num overlay só.
+
+### Manipulação (write-back) — não é só leitura
+Linkado de verdade: dá pra **agir** no GitHub de dentro do Command Center.
+Gated pelo secret compartilhado (`X-TCC-Secret` → `TRYEVO_DASH_SECRET`); o
+`GH_PAT` precisa de escopo de **escrita** (`repo`).
+
+| Onde | Ação |
+|---|---|
+| Modal de PR | **✅ Merge** (bloqueia se em conflito), **🚫 Fechar**, **♻️ Reabrir**, **💬 Comentar** |
+| Card (Ações) | **🐙 Criar issue no GitHub** (resolve o repo das sources; escolhe se houver vários) |
+
+Fluxo: `github-write.js` (function POST, secret-gated) → GitHub API. Após a ação,
+o modal e o overlay recarregam. Próximo: fechar issue ao mover card pra Done (automação, Fase 2).
+
 ### Limitações conhecidas (v1)
 - `mergeable`/`reviewDecision`/`additions` não vêm na listagem (evita N chamadas);
   o **modal** do PR já busca o detalhe completo sob demanda (`github-api`).

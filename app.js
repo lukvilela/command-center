@@ -2353,6 +2353,21 @@ function renderPRModalFull(repo, number, bundle) {
     </div>
   ` : '';
 
+  // Ações (manipulação real do PR) — merge / fechar / reabrir / comentar
+  const prIsOpen = pr.state === 'open' && !pr.merged_at;
+  const prIsMerged = !!pr.merged_at;
+  const prActionsHtml = `
+    <div class="pr-actions">
+      ${prIsOpen ? `
+        <button class="pr-act-btn merge" data-act="mergePR" ${pr.mergeable === false ? 'disabled title="em conflito"' : ''}>✅ Merge</button>
+        <button class="pr-act-btn danger" data-act="closePR">🚫 Fechar</button>` : ''}
+      ${(!prIsOpen && !prIsMerged) ? `<button class="pr-act-btn" data-act="reopenPR">♻️ Reabrir</button>` : ''}
+      ${prIsMerged ? `<span class="pr-merged-tag">✔ mergeado</span>` : ''}
+      <span class="pr-act-spacer"></span>
+      <input type="text" id="pr-comment-input" class="pr-comment-input" placeholder="Comentar no PR…">
+      <button class="pr-act-btn" data-act="commentPR">💬 Comentar</button>
+    </div>`;
+
   $('#modal-content').innerHTML = `
     <button class="modal-close" id="modal-close">×</button>
     <h2><a href="${pr.html_url}" target="_blank" style="color:inherit;text-decoration:none">${repo}#${number}</a></h2>
@@ -2379,6 +2394,7 @@ function renderPRModalFull(repo, number, bundle) {
 
     ${conflictHtml}
     ${cardLinkHtml}
+    ${prActionsHtml}
 
     ${pr.body ? `<h3>📝 Descrição</h3><div class="pr-body">${escapeHtml(pr.body).slice(0, 2000)}</div>` : ''}
 
@@ -2397,6 +2413,29 @@ function renderPRModalFull(repo, number, bundle) {
     const c = state.cardsByIdShort[id];
     if (c) showCardModal(c);
   });
+
+  // Bind ações de PR (manipulação real no GitHub)
+  $$('.pr-act-btn').forEach(btn => btn.addEventListener('click', async () => {
+    const act = btn.dataset.act;
+    const data = { repo, number };
+    if (act === 'commentPR') {
+      const body = ($('#pr-comment-input')?.value || '').trim();
+      if (!body) { showToast('Escreva um comentário', 'info'); return; }
+      data.body = body;
+    }
+    if (act === 'mergePR' && !confirm(`Mergear ${repo}#${number} na ${(pr.base && pr.base.ref) || 'main'}?`)) return;
+    if (act === 'closePR' && !confirm(`Fechar ${repo}#${number} SEM mergear?`)) return;
+    btn.disabled = true;
+    try {
+      await githubWrite(act, data);
+      showToast(`✅ ${act === 'mergePR' ? 'Mergeado' : act === 'closePR' ? 'Fechado' : act === 'reopenPR' ? 'Reaberto' : 'Comentado'}!`, 'success');
+      showPRModal(repo, number, prHint);   // refresh do modal
+      loadData(true);                        // refresh do overlay/cards
+    } catch (e) {
+      showToast('Erro: ' + e.message, 'error');
+      btn.disabled = false;
+    }
+  }));
 }
 
 // ═══════════════════════════ CARD MODAL ═══════════════════════════
@@ -2587,6 +2626,7 @@ function renderCardModal(c, prs, commits) {
 
       <div class="modal-side">
         <h3>⚡ Ações</h3>
+        ${(window.CCNative && CCNative.isNative()) ? `<button class="side-btn" id="gh-issue-btn">🐙 Criar issue no GitHub</button>` : ''}
         <button class="side-btn" id="archive-card-btn">📦 Arquivar card</button>
         <button class="side-btn danger" id="delete-card-btn">🗑️ Deletar (sem volta)</button>
       </div>
@@ -2780,6 +2820,9 @@ function bindCardModalEvents(c) {
   // ─── Attachments ───
   bindAttachmentsEvents(c);
 
+  // ─── Criar issue no GitHub a partir do card ───
+  $('#gh-issue-btn')?.addEventListener('click', () => createIssueFromCard(c));
+
   // ─── Archive / Delete ───
   $('#archive-card-btn')?.addEventListener('click', async () => {
     if (!confirm(`Arquivar o card #${c.idShort}?\n\nPode ser desarquivado depois pelo Trello.`)) return;
@@ -2800,6 +2843,27 @@ function bindCardModalEvents(c) {
       setTimeout(() => loadData(true), 1500);
     } catch (err) { showToast(`❌ ${err.message}`, 'error'); }
   });
+}
+
+// Cria uma issue no GitHub a partir de um card (resolve o repo das sources do projeto)
+async function createIssueFromCard(c) {
+  if (!(window.CCNative && CCNative.isNative())) return;
+  let srcs = [];
+  try { srcs = (await CC.sources.byProject(CCNative.project.id)).filter(s => s.type === 'github_repo'); } catch {}
+  if (!srcs.length) { showToast('Nenhum repo GitHub. Adicione em 🔌 Fontes.', 'info'); return; }
+  let repo = srcs[0].config && srcs[0].config.repo;
+  if (srcs.length > 1) {
+    repo = prompt('Em qual repo criar a issue? (owner/name)\n\n' + srcs.map(s => '• ' + (s.config && s.config.repo)).join('\n'), repo);
+    if (!repo) return;
+  }
+  const title = cleanTitle(c.name) || c.name;
+  const body = `${c.desc || ''}\n\n---\n_Criado a partir do card #${c.idShort} no Command Center._`;
+  try {
+    const res = await githubWrite('createIssue', { repo, title, body });
+    const url = res && res.result && res.result.html_url;
+    showToast('🐙 Issue criada!', 'success');
+    if (url) window.open(url, '_blank');
+  } catch (e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
 function updateCardInList(c) {
@@ -3358,6 +3422,27 @@ async function trelloWrite(action, data) {
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Falha ${res.status}: ${text.slice(0, 200)}`);
+  }
+  return res.json();
+}
+
+// Escrita no GitHub (merge/close/comment/issue) — gated pelo secret compartilhado.
+async function githubWrite(action, data) {
+  const secret = getStoredSecret();
+  if (!secret) { showSecretPrompt(); throw new Error('Secret não configurado'); }
+  const res = await fetch(`${getApiBase()}/github-write`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-TCC-Secret': secret },
+    body: JSON.stringify({ action, data }),
+  });
+  if (res.status === 401) {
+    localStorage.removeItem('tcc_dash_secret');
+    showSecretPrompt();
+    throw new Error('Secret inválido');
+  }
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`Falha ${res.status}: ${t.slice(0, 200)}`);
   }
   return res.json();
 }

@@ -356,12 +356,89 @@ const CCNative = (() => {
       </select>
       <button id="cc-proj-new" title="Novo projeto">＋</button>
       <button id="cc-proj-import" title="Importar board do Trello pra este projeto">⬇️ Trello</button>
+      <button id="cc-proj-sources" title="Gerenciar fontes (repos GitHub, etc.)">🔌 Fontes</button>
       <button id="cc-proj-ghsync" title="Sincronizar/absorver repos GitHub deste projeto">🐙 Sync</button>`;
     brand.insertAdjacentElement('afterend', wrap);
     document.getElementById('cc-proj-select').onchange = (e) => switchProject(e.target.value);
     document.getElementById('cc-proj-new').onclick = createProjectFlow;
     document.getElementById('cc-proj-import').onclick = importFlow;
+    document.getElementById('cc-proj-sources').onclick = openSourcesPanel;
     document.getElementById('cc-proj-ghsync').onclick = ghSyncFlow;
+  }
+
+  // ---- GERENCIADOR DE FONTES (multi-repo) ----------------------------------
+  const SOURCE_META = {
+    github_repo:    { icon: '🐙', label: 'GitHub repo',   placeholder: 'owner/name (um por linha)', enabled: true },
+    gitlab_project: { icon: '🦊', label: 'GitLab',        placeholder: 'em breve', enabled: false },
+    trello_board:   { icon: '📌', label: 'Trello board',  placeholder: 'em breve', enabled: false },
+    website:        { icon: '🌐', label: 'Website',        placeholder: 'em breve', enabled: false },
+  };
+
+  async function openSourcesPanel() {
+    if (!isNative()) { (window.showToast || alert)('Modo nativo não está ativo.'); return; }
+    let overlay = document.getElementById('cc-sources-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'cc-sources-overlay';
+      overlay.className = 'cc-modal-overlay';
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    }
+    await renderSourcesPanel(overlay);
+  }
+
+  async function renderSourcesPanel(overlay) {
+    const sources = await CC.sources.byProject(project.id);
+    const rows = sources.length ? sources.map(s => {
+      const m = SOURCE_META[s.type] || { icon: '🔌', label: s.type };
+      const ref = (s.config && (s.config.repo || s.config.url)) || s.display_name;
+      const when = s.last_synced_at ? `sync ${new Date(s.last_synced_at).toLocaleString('pt-BR')}` : 'nunca sincronizado';
+      return `<div class="cc-src-row" data-id="${s.id}">
+        <span class="cc-src-ico">${m.icon}</span>
+        <span class="cc-src-ref"><strong>${escapeHtmlSafe(ref)}</strong><small>${m.label} · ${when}</small></span>
+        <button class="cc-src-del" data-id="${s.id}" title="Remover fonte">🗑️</button>
+      </div>`;
+    }).join('') : '<div class="cc-src-empty">Nenhuma fonte ainda. Cole repos abaixo.</div>';
+
+    overlay.innerHTML = `
+      <div class="cc-modal">
+        <button class="cc-modal-x" id="cc-src-close">×</button>
+        <h2>🔌 Fontes de "${escapeHtmlSafe(project.name)}"</h2>
+        <p class="cc-src-sub">Tudo que este projeto absorve. Adicione vários repos — o Sync puxa todos.</p>
+        <div class="cc-src-list">${rows}</div>
+        <div class="cc-src-add">
+          <label>🐙 Adicionar repos GitHub <small>(um por linha — <code>owner/name</code>)</small></label>
+          <textarea id="cc-src-input" rows="3" placeholder="lukvilela/manga-store&#10;lukvilela/kanaru&#10;facebook/react"></textarea>
+          <div class="cc-src-actions">
+            <button id="cc-src-add-btn">➕ Adicionar</button>
+            <button id="cc-src-sync-btn" class="primary">🐙 Sincronizar tudo</button>
+          </div>
+          <p class="cc-src-soon">Em breve: 🦊 GitLab · 📌 Trello · 🌐 Website</p>
+        </div>
+      </div>`;
+
+    overlay.querySelector('#cc-src-close').onclick = () => overlay.remove();
+    overlay.querySelectorAll('.cc-src-del').forEach(b => b.onclick = async () => {
+      if (!confirm('Remover esta fonte? (os cards já importados continuam)')) return;
+      await CC.sources.remove(b.dataset.id);
+      renderSourcesPanel(overlay);
+    });
+    overlay.querySelector('#cc-src-add-btn').onclick = async () => {
+      const raw = overlay.querySelector('#cc-src-input').value;
+      const repos = [...new Set(raw.split(/[\n,;\s]+/).map(s => s.trim()).filter(Boolean))]
+        .filter(r => /^[^/]+\/[^/]+$/.test(r));
+      if (!repos.length) { (window.showToast || alert)('Formato: owner/name (um por linha)'); return; }
+      const existing = new Set((await CC.sources.byProject(project.id))
+        .filter(s => s.type === 'github_repo').map(s => (s.config && s.config.repo)));
+      for (const repo of repos) {
+        if (existing.has(repo)) continue;
+        await CC.sources.create({ project_id: project.id, type: 'github_repo',
+          display_name: repo.split('/')[1], config: { repo } });
+      }
+      (window.showToast || (() => {}))(`✅ ${repos.length} repo(s) adicionado(s)`, 'success');
+      renderSourcesPanel(overlay);
+    };
+    overlay.querySelector('#cc-src-sync-btn').onclick = () => { overlay.remove(); ghSyncFlow(); };
   }
 
   async function ghSyncFlow() {

@@ -1,4 +1,10 @@
 {
+  "_comment_supabase": "Preencha pra ativar o MODO NATIVO (modelo próprio multi-projeto). Vazio/REPLACE = cai no modo Trello legado. Ver SETUP-SUPABASE.md.",
+  "supabase": {
+    "url": "https://REPLACE_ME.supabase.co",
+    "anonKey": "REPLACE_ME"
+  },
+
   "project": {
     "name": "Meu Projeto",
     "tagline": "Command Center",

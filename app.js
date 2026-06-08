@@ -24,6 +24,7 @@ async function loadConfig() {
     if (!r.ok) throw new Error('config.json não encontrado');
     const cfg = await r.json();
     CONFIG = cfg;
+    window.CONFIG = cfg;
     state.config = cfg;
     TEAM_USERS = cfg.team || [];
     if (cfg.project) {
@@ -297,16 +298,26 @@ function getCommitsForCard(idShort) {
 }
 
 // ═══════════════════════════ DATA LOADING ═══════════════════════════
+let _ccSubscribed = false;
 async function loadData(silent = false) {
   try {
-    // Tenta primeiro o snapshot live (mais fresco), com fallback pro JSON estático
+    // Modo nativo (Supabase): monta o derived a partir do modelo próprio.
+    if (window.CCNative) await CCNative.ready;
     let derived = null;
-    try {
-      const r = await fetch('/.netlify/functions/trello-snapshot?_=' + Date.now(), {
-        headers: { 'Cache-Control': 'no-cache' },
-      });
-      if (r.ok) derived = await r.json();
-    } catch {}
+    if (window.CCNative && CCNative.isNative()) {
+      derived = await CCNative.loadDerived();
+      if (!_ccSubscribed) { _ccSubscribed = true; CCNative.subscribe(() => loadData(true)); }
+    }
+
+    // Senão: tenta o snapshot live do Trello (mais fresco), com fallback pro JSON estático
+    if (!derived) {
+      try {
+        const r = await fetch('/.netlify/functions/trello-snapshot?_=' + Date.now(), {
+          headers: { 'Cache-Control': 'no-cache' },
+        });
+        if (r.ok) derived = await r.json();
+      } catch {}
+    }
 
     if (!derived) {
       // Fallback: JSON estático
@@ -2411,7 +2422,7 @@ async function showCardModal(c) {
     }
   });
 
-  if (getStoredSecret()) {
+  if (getStoredSecret() || (window.CCNative && CCNative.isNative())) {
     try {
       const [cl, co, at] = await Promise.all([
         trelloWrite('getChecklists', { id: c.id }).catch(() => null),
@@ -3317,6 +3328,10 @@ function getApiBase() {
 }
 
 async function trelloWrite(action, data) {
+  // Modo nativo (Supabase): roteia toda escrita pro modelo próprio.
+  if (window.CCNative && CCNative.isNative()) {
+    return CCNative.write(action, data);
+  }
   const secret = getStoredSecret();
   if (!secret) {
     showSecretPrompt();

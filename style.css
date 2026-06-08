@@ -2221,3 +2221,20 @@ select.qa-input { appearance: none; cursor: pointer; padding-right: 30px;
   .topbar-right { display: none; }
   .epics-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Seletor multi-projeto (modo nativo / Supabase) ───────────────── */
+.cc-proj-switcher {
+  display: flex; gap: 6px; align-items: center;
+  padding: 8px 14px 4px; margin-top: 2px;
+}
+.cc-proj-switcher select {
+  flex: 1; min-width: 0; background: var(--bg-elev, #161b22);
+  color: var(--fg, #e6edf3); border: 1px solid var(--border, #30363d);
+  border-radius: 7px; padding: 5px 8px; font-size: 12.5px; cursor: pointer;
+}
+.cc-proj-switcher button {
+  background: var(--bg-elev, #161b22); color: var(--fg-muted, #9da7b3);
+  border: 1px solid var(--border, #30363d); border-radius: 7px;
+  padding: 5px 8px; font-size: 12px; cursor: pointer; white-space: nowrap;
+}
+.cc-proj-switcher button:hover { color: var(--accent, #58a6ff); border-color: var(--accent, #58a6ff); }

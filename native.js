@@ -392,26 +392,30 @@ const CCNative = (() => {
     const rows = sources.length ? sources.map(s => {
       const m = SOURCE_META[s.type] || { icon: '🔌', label: s.type };
       const ref = (s.config && (s.config.repo || s.config.url)) || s.display_name;
+      const hasKey = !!(s.config && s.config.token);
       const when = s.last_synced_at ? `sync ${new Date(s.last_synced_at).toLocaleString('pt-BR')}` : 'nunca sincronizado';
       return `<div class="cc-src-row" data-id="${s.id}">
         <span class="cc-src-ico">${m.icon}</span>
-        <span class="cc-src-ref"><strong>${escapeHtmlSafe(ref)}</strong><small>${m.label} · ${when}</small></span>
+        <span class="cc-src-ref"><strong>${escapeHtmlSafe(ref)}</strong><small>${m.label} · ${hasKey ? '🔑 com chave · ' : 'sem chave · '}${when}</small></span>
         <button class="cc-src-del" data-id="${s.id}" title="Remover fonte">🗑️</button>
       </div>`;
-    }).join('') : '<div class="cc-src-empty">Nenhuma fonte ainda. Cole repos abaixo.</div>';
+    }).join('') : '<div class="cc-src-empty">Nenhum projeto conectado ainda. Conecte um repo abaixo.</div>';
 
     overlay.innerHTML = `
       <div class="cc-modal">
         <button class="cc-modal-x" id="cc-src-close">×</button>
-        <h2>🔌 Fontes de "${escapeHtmlSafe(project.name)}"</h2>
-        <p class="cc-src-sub">Tudo que este projeto absorve. Adicione vários repos — o Sync puxa todos.</p>
+        <h2>🔌 Projetos que "${escapeHtmlSafe(project.name)}" lê</h2>
+        <p class="cc-src-sub">Cada projeto externo (repo/board) é uma fonte. Cole a <strong>API key</strong> dele e o Command Center puxa tudo direto — issues viram cards, PRs ficam linkados, e dá pra mergear/comentar daqui.</p>
         <div class="cc-src-list">${rows}</div>
         <div class="cc-src-add">
-          <label>🐙 Adicionar repos GitHub <small>(um por linha — <code>owner/name</code>)</small></label>
-          <textarea id="cc-src-input" rows="3" placeholder="lukvilela/manga-store&#10;lukvilela/kanaru&#10;facebook/react"></textarea>
+          <label>🐙 Conectar repo(s) GitHub <small>(um por linha — <code>owner/name</code>)</small></label>
+          <textarea id="cc-src-input" rows="2" placeholder="lukvilela/manga-store&#10;lukvilela/kanaru"></textarea>
+          <label style="margin-top:10px">🔑 API key (token) <small>— GitHub PAT (<code>ghp_…</code> / <code>github_pat_…</code>)</small></label>
+          <input id="cc-src-token" type="password" placeholder="cole o token aqui (read p/ ler, write p/ mergear/comentar)" autocomplete="off">
+          <p class="cc-src-keynote">🔒 A chave fica salva no seu projeto Supabase e é usada pra puxar/manipular o GitHub <strong>direto do navegador</strong> (funciona sem servidor). Em ferramenta pessoal, ok — a Fase 2 troca por login.</p>
           <div class="cc-src-actions">
-            <button id="cc-src-add-btn">➕ Adicionar</button>
-            <button id="cc-src-sync-btn" class="primary">🐙 Sincronizar tudo</button>
+            <button id="cc-src-add-btn">➕ Conectar</button>
+            <button id="cc-src-sync-btn" class="primary">🐙 Puxar tudo</button>
           </div>
           <p class="cc-src-soon">Em breve: 🦊 GitLab · 📌 Trello · 🌐 Website</p>
         </div>
@@ -425,17 +429,18 @@ const CCNative = (() => {
     });
     overlay.querySelector('#cc-src-add-btn').onclick = async () => {
       const raw = overlay.querySelector('#cc-src-input').value;
+      const token = (overlay.querySelector('#cc-src-token').value || '').trim();
       const repos = [...new Set(raw.split(/[\n,;\s]+/).map(s => s.trim()).filter(Boolean))]
         .filter(r => /^[^/]+\/[^/]+$/.test(r));
       if (!repos.length) { (window.showToast || alert)('Formato: owner/name (um por linha)'); return; }
-      const existing = new Set((await CC.sources.byProject(project.id))
-        .filter(s => s.type === 'github_repo').map(s => (s.config && s.config.repo)));
+      const all = await CC.sources.byProject(project.id);
       for (const repo of repos) {
-        if (existing.has(repo)) continue;
-        await CC.sources.create({ project_id: project.id, type: 'github_repo',
-          display_name: repo.split('/')[1], config: { repo } });
+        const existing = all.find(s => s.type === 'github_repo' && s.config && s.config.repo === repo);
+        const config = token ? { repo, token } : { repo };
+        if (existing) await CC.sources.update(existing.id, { config });           // atualiza a chave
+        else await CC.sources.create({ project_id: project.id, type: 'github_repo', display_name: repo.split('/')[1], config });
       }
-      (window.showToast || (() => {}))(`✅ ${repos.length} repo(s) adicionado(s)`, 'success');
+      (window.showToast || (() => {}))(`✅ ${repos.length} repo(s) conectado(s)${token ? ' com chave' : ''}`, 'success');
       renderSourcesPanel(overlay);
     };
     overlay.querySelector('#cc-src-sync-btn').onclick = () => { overlay.remove(); ghSyncFlow(); };

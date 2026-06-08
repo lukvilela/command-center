@@ -16,6 +16,104 @@ const Connectors = (() => {
 
   const slug = (s) => String(s || '').toLowerCase();
 
+  // ── Cliente GitHub que roda NO NAVEGADOR (api.github.com tem CORS p/ token).
+  //    Usado quando a fonte tem API key salva → puxa/manipula sem function/servidor.
+  const GH = {
+    async api(path, token, opts = {}) {
+      const r = await fetch('https://api.github.com' + path, {
+        ...opts,
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          ...(opts.headers || {}),
+        },
+      });
+      if (!r.ok) throw new Error('GitHub ' + r.status + ': ' + (await r.text()).slice(0, 160));
+      return r.status === 204 ? null : r.json();
+    },
+
+    extractIds(text) {
+      if (!text) return [];
+      return [...new Set([...String(text).matchAll(/#(\d{1,4})\b/g)].map(m => parseInt(m[1], 10)))];
+    },
+
+    // mesmo shape que a function github-sync.js, porém client-side
+    async fetchRepo(repo, token) {
+      const [pulls, issuesRaw, runsRaw, commitsRaw] = await Promise.all([
+        this.api(`/repos/${repo}/pulls?state=all&per_page=60&sort=updated&direction=desc`, token).catch(() => []),
+        this.api(`/repos/${repo}/issues?state=all&per_page=100&sort=updated&direction=desc`, token).catch(() => []),
+        this.api(`/repos/${repo}/actions/runs?per_page=15`, token).catch(() => ({ workflow_runs: [] })),
+        this.api(`/repos/${repo}/commits?per_page=25`, token).catch(() => []),
+      ]);
+      const short = repo.split('/')[1];
+      const prs = (pulls || []).map(pr => ({
+        repo: short, number: pr.number, title: pr.title,
+        state: pr.merged_at ? 'MERGED' : (pr.state || '').toUpperCase(), isDraft: !!pr.draft,
+        createdAt: pr.created_at, updatedAt: pr.updated_at, mergedAt: pr.merged_at, closedAt: pr.closed_at,
+        author: pr.user && pr.user.login, headRefName: pr.head && pr.head.ref, baseRefName: pr.base && pr.base.ref,
+        labels: (pr.labels || []).map(l => ({ name: l.name, color: l.color })),
+        reviewDecision: null, mergeable: null, additions: null, deletions: null, url: pr.html_url, body: pr.body || '',
+      }));
+      const runs = ((runsRaw && runsRaw.workflow_runs) || []).map(r => ({
+        databaseId: r.id, displayTitle: r.display_title, event: r.event, conclusion: r.conclusion, status: r.status,
+        createdAt: r.created_at, updatedAt: r.updated_at, headBranch: r.head_branch, workflowName: r.name, url: r.html_url,
+      }));
+      const commits = (commitsRaw || []).map(c => ({
+        sha: c.sha, message: c.commit.message, author: c.commit.author && c.commit.author.name,
+        date: c.commit.author && c.commit.author.date, url: c.html_url,
+      }));
+      const issues = (issuesRaw || []).filter(i => !i.pull_request).map(i => ({
+        number: i.number, title: i.title, body: i.body || '', state: i.state,
+        labels: (i.labels || []).map(l => ({ name: l.name, color: l.color })),
+        assignees: (i.assignees || []).map(a => a.login), author: i.user && i.user.login,
+        createdAt: i.created_at, updatedAt: i.updated_at, closedAt: i.closed_at, url: i.html_url,
+      }));
+      const cardLinks = {};
+      const push = (id, slot, o) => { (cardLinks[id] = cardLinks[id] || { prs: [], commits: [] })[slot].push(o); };
+      for (const pr of prs) for (const id of [...this.extractIds(pr.title), ...this.extractIds(pr.body), ...this.extractIds(pr.headRefName)])
+        push(id, 'prs', { repo: short, number: pr.number, title: pr.title, state: pr.state, isDraft: pr.isDraft,
+          mergedAt: pr.mergedAt, closedAt: pr.closedAt, createdAt: pr.createdAt, updatedAt: pr.updatedAt,
+          headRefName: pr.headRefName, author: pr.author, mergeable: null, url: pr.url });
+      for (const c of commits) for (const id of this.extractIds(c.message))
+        push(id, 'commits', { repo: short, sha: c.sha.slice(0, 7), message: c.message.split('\n')[0].slice(0, 120), author: c.author, date: c.date, url: c.url });
+      const stats = {
+        openPRs: prs.filter(p => p.state === 'OPEN').length,
+        mergedRecent: prs.filter(p => p.mergedAt && (Date.now() - new Date(p.mergedAt).getTime()) < 7 * 86400000).length,
+        runsFailed: runs.filter(r => r.conclusion === 'failure').length,
+        runsLastSuccess: runs.find(r => r.conclusion === 'success'),
+        runsLastFailure: runs.find(r => r.conclusion === 'failure'),
+      };
+      return { fetchedAt: new Date().toISOString(), repo: { full: repo, url: `https://github.com/${repo}`, prs, runs, commits, stats }, issues, cardLinks };
+    },
+
+    // escrita direta (merge/close/reopen/comment/createIssue)
+    write(action, d, token) {
+      const J = (method, path, body) => this.api(path, token, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+      switch (action) {
+        case 'mergePR':      return J('PUT',   `/repos/${d.repo}/pulls/${d.number}/merge`, { merge_method: d.method || 'merge' });
+        case 'closePR':      return J('PATCH', `/repos/${d.repo}/pulls/${d.number}`, { state: 'closed' });
+        case 'reopenPR':     return J('PATCH', `/repos/${d.repo}/pulls/${d.number}`, { state: 'open' });
+        case 'commentPR':
+        case 'commentIssue': return J('POST',  `/repos/${d.repo}/issues/${d.number}/comments`, { body: d.body });
+        case 'closeIssue':   return J('PATCH', `/repos/${d.repo}/issues/${d.number}`, { state: 'closed' });
+        case 'reopenIssue':  return J('PATCH', `/repos/${d.repo}/issues/${d.number}`, { state: 'open' });
+        case 'createIssue':  return J('POST',  `/repos/${d.repo}/issues`, { title: d.title, body: d.body || '' });
+        default: throw new Error('ação GitHub desconhecida: ' + action);
+      }
+    },
+  };
+
+  // resolve o token salvo na source de um repo (p/ writes client-side)
+  async function tokenForRepo(repoFull) {
+    if (!CCNative.isNative()) return null;
+    try {
+      const srcs = await CC.sources.byProject(CCNative.project.id);
+      const s = srcs.find(x => x.type === 'github_repo' && x.config && x.config.repo === repoFull && x.config.token);
+      return s ? s.config.token : null;
+    } catch { return null; }
+  }
+
   // garante uma lista pelo nome (cria se faltar); retorna id nativo
   async function ensureList(pid, name, { isDone = false } = {}) {
     const lists = CCNative.cache.lists.length ? CCNative.cache.lists : await CC.lists.byProject(pid);
@@ -83,13 +181,20 @@ const Connectors = (() => {
 
     for (const src of sources) {
       const repo = (src.config && src.config.repo) || src.display_name;
-      onProgress(`🐙 Sincronizando ${repo}…`);
+      const token = src.config && src.config.token;
+      onProgress(`🐙 Puxando ${repo}…`);
       let res;
       try {
-        const r = await fetch(`/.netlify/functions/github-sync?repo=${encodeURIComponent(repo)}&_=${Date.now()}`);
-        const j = await r.json();
-        if (!r.ok || !j.ok) throw new Error((j && j.erro) || `HTTP ${r.status}`);
-        res = j.result;
+        if (token) {
+          // tem API key → puxa DIRETO do navegador (funciona sem servidor/function)
+          res = await GH.fetchRepo(repo, token);
+        } else {
+          // sem key → usa a function (GH_PAT do servidor); só roda em netlify dev/deploy
+          const r = await fetch(`/.netlify/functions/github-sync?repo=${encodeURIComponent(repo)}&_=${Date.now()}`);
+          const j = await r.json();
+          if (!r.ok || !j.ok) throw new Error((j && j.erro) || `HTTP ${r.status} — cole a API key em 🔌 Fontes pra puxar sem servidor`);
+          res = j.result;
+        }
       } catch (e) {
         onProgress(`⚠️ ${repo}: ${e.message}`);
         continue;
@@ -167,7 +272,10 @@ const Connectors = (() => {
     return { overlay, issuesAbsorbed, issuesUpdated };
   }
 
-  return { syncGitHub, resolveGithubSources };
+  return {
+    syncGitHub, resolveGithubSources, tokenForRepo,
+    ghWrite: (action, data, token) => GH.write(action, data, token),
+  };
 })();
 
 window.Connectors = Connectors;

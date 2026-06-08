@@ -3426,8 +3426,17 @@ async function trelloWrite(action, data) {
   return res.json();
 }
 
-// Escrita no GitHub (merge/close/comment/issue) — gated pelo secret compartilhado.
+// Escrita no GitHub (merge/close/comment/issue).
+// 1º tenta client-side com a API key salva na fonte (funciona sem servidor);
+// senão cai na function github-write (gated pelo secret compartilhado).
 async function githubWrite(action, data) {
+  if (window.Connectors && Connectors.tokenForRepo && data && data.repo) {
+    const token = await Connectors.tokenForRepo(data.repo);
+    if (token) {
+      const result = await Connectors.ghWrite(action, data, token);
+      return { ok: true, result };
+    }
+  }
   const secret = getStoredSecret();
   if (!secret) { showSecretPrompt(); throw new Error('Secret não configurado'); }
   const res = await fetch(`${getApiBase()}/github-write`, {

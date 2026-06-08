@@ -451,7 +451,7 @@ const CCNative = (() => {
     if (!window.Connectors) { toast('connectors.js não carregado', 'error'); return; }
     try {
       const out = await window.Connectors.syncGitHub((msg) => toast(msg, 'info'));
-      toast(`✅ GitHub: ${out.issuesAbsorbed} novas, ${out.issuesUpdated} atualizadas`, 'success');
+      toast(`✅ GitHub: ${out.issuesAbsorbed} issues + ${out.prsAbsorbed} PRs novos`, 'success');
       if (window.loadData) await window.loadData(true);
     } catch (e) {
       toast('Erro no sync GitHub: ' + e.message, 'error');

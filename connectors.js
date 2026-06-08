@@ -177,7 +177,7 @@ const Connectors = (() => {
       overlay.cardLinks[id][slot].push(...arr);
     };
 
-    let issuesAbsorbed = 0, issuesUpdated = 0;
+    let issuesAbsorbed = 0, issuesUpdated = 0, prsAbsorbed = 0, prsUpdated = 0;
 
     for (const src of sources) {
       const repo = (src.config && src.config.repo) || src.display_name;
@@ -245,6 +245,36 @@ const Connectors = (() => {
         }
       }
 
+      // ABSORÇÃO: PRs → cards (repos que trabalham por PR, ex. projetos solo)
+      const minePR = {};
+      for (const c of existingCards) {
+        if (c.source_id === src.id && c.external_kind === 'github_pr') minePR[String(c.external_id)] = c;
+      }
+      for (const pr of (res.repo.prs || [])) {
+        const eid = String(pr.number);
+        const closed = pr.state !== 'OPEN';   // MERGED ou CLOSED → coluna Done
+        const title = `PR #${pr.number}: ${pr.title}`;
+        const exist = minePR[eid];
+        if (exist) {
+          await CC.cards.update(exist.id, { title, body: pr.body || '', external_url: pr.url, external_raw: pr });
+          prsUpdated++;
+        } else {
+          const card = await CC.cards.create({
+            project_id: pid, list_id: closed ? doneListId : openListId,
+            seq: pr.number, title, body: pr.body || '', position: 1000 + pr.number,
+            source_id: src.id, external_kind: 'github_pr', external_id: eid, external_url: pr.url, external_raw: pr,
+          });
+          existingCards.push({ ...card });
+          const mid = memberByLogin[slug(pr.author || '')];
+          if (mid) await CC.assign(card.id, mid);
+          for (const lb of (pr.labels || [])) {
+            const lid = await ensureLabel(pid, lb.name, lb.color, labelCache);
+            await CC.addLabel(card.id, lid);
+          }
+          prsAbsorbed++;
+        }
+      }
+
       try { await CC.sources.update(src.id, { last_synced_at: new Date().toISOString() }); } catch {}
     }
 
@@ -268,8 +298,8 @@ const Connectors = (() => {
     // entrega o overlay pro app (página GitHub / badges / timeline)
     if (window.CCNative && CCNative.setGithub) CCNative.setGithub(overlay);
 
-    onProgress(`✅ GitHub: ${issuesAbsorbed} issues novas, ${issuesUpdated} atualizadas, ${Object.keys(overlay.repos).length} repo(s).`);
-    return { overlay, issuesAbsorbed, issuesUpdated };
+    onProgress(`✅ GitHub: ${issuesAbsorbed} issues + ${prsAbsorbed} PRs novos (${issuesUpdated + prsUpdated} atualizados), ${Object.keys(overlay.repos).length} repo(s).`);
+    return { overlay, issuesAbsorbed, issuesUpdated, prsAbsorbed, prsUpdated };
   }
 
   return {

@@ -326,10 +326,15 @@ async function loadData(silent = false) {
       derived = await r.json();
     }
 
-    const [github, notesText] = await Promise.all([
-      fetch('data/github.json?_=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
+    // Overlay GitHub: no modo nativo, usa o que o connector sincronizou (live);
+    // senão, o data/github.json estático (gh-sync.js local).
+    const ccOverlay = (window.CCNative && CCNative.getGithub && CCNative.getGithub()) || null;
+    const [githubFetched, notesText] = await Promise.all([
+      ccOverlay ? Promise.resolve(null)
+        : fetch('data/github.json?_=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('notes.md?_=' + Date.now()).then(r => r.ok ? r.text() : '').catch(() => ''),
     ]);
+    const github = ccOverlay || githubFetched;
 
     const wasFresh = state.lastRefresh;
     const oldDerived = state.derived;

@@ -17,6 +17,7 @@ const CCNative = (() => {
   const LS_PROJECT = 'cc_current_project';
   let project = null;        // projeto atual { id, slug, name, ... }
   let cache = { lists: [], members: [], labels: [], rawCards: [] };
+  let _github = null;        // overlay GitHub do connector (Fase 3)
 
   // EPIC_META default (mesmas chaves do snapshot p/ compatibilidade dos renderers)
   const DEFAULT_EPICS = {
@@ -354,11 +355,25 @@ const CCNative = (() => {
         ${projects.map(p => `<option value="${p.id}" ${project && p.id === project.id ? 'selected' : ''}>${p.icon || '🎯'} ${escapeHtmlSafe(p.name)}</option>`).join('')}
       </select>
       <button id="cc-proj-new" title="Novo projeto">＋</button>
-      <button id="cc-proj-import" title="Importar board do Trello pra este projeto">⬇️ Trello</button>`;
+      <button id="cc-proj-import" title="Importar board do Trello pra este projeto">⬇️ Trello</button>
+      <button id="cc-proj-ghsync" title="Sincronizar/absorver repos GitHub deste projeto">🐙 Sync</button>`;
     brand.insertAdjacentElement('afterend', wrap);
     document.getElementById('cc-proj-select').onchange = (e) => switchProject(e.target.value);
     document.getElementById('cc-proj-new').onclick = createProjectFlow;
     document.getElementById('cc-proj-import').onclick = importFlow;
+    document.getElementById('cc-proj-ghsync').onclick = ghSyncFlow;
+  }
+
+  async function ghSyncFlow() {
+    const toast = window.showToast || ((m) => console.log(m));
+    if (!window.Connectors) { toast('connectors.js não carregado', 'error'); return; }
+    try {
+      const out = await window.Connectors.syncGitHub((msg) => toast(msg, 'info'));
+      toast(`✅ GitHub: ${out.issuesAbsorbed} novas, ${out.issuesUpdated} atualizadas`, 'success');
+      if (window.loadData) await window.loadData(true);
+    } catch (e) {
+      toast('Erro no sync GitHub: ' + e.message, 'error');
+    }
   }
 
   async function importFlow() {
@@ -421,6 +436,8 @@ const CCNative = (() => {
   return {
     ready, isNative, loadDerived, write, importFromTrello, subscribe,
     mountProjectSwitcher, createProjectFlow,
+    setGithub: (g) => { _github = g; },
+    getGithub: () => _github,
     get project() { return project; },
     get cache() { return cache; },
     hasCards: () => cache.rawCards.length > 0,

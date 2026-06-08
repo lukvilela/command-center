@@ -149,6 +149,12 @@ async function init() {
     externalRefs: {
       upsertForCard: (cardId, refs) => client.from('external_refs')
         .upsert(refs.map(r => ({ ...r, card_id: cardId }))).then(ok),
+      // substitui os refs de PR/commit do card (idempotente p/ re-sync)
+      replaceForCard: async (cardId, refs) => {
+        await client.from('external_refs').delete().eq('card_id', cardId).in('kind', ['pr', 'commit']);
+        if (refs.length) return client.from('external_refs').insert(refs.map(r => ({ ...r, card_id: cardId }))).then(ok);
+        return [];
+      },
     },
 
     // ---- SAVED VIEWS ----------------------------------------------------

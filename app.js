@@ -2203,9 +2203,16 @@ async function showPRModal(repo, number, prHint = null) {
 
   // Lazy load detalhes
   try {
-    const r = await fetch(`/.netlify/functions/github-api?action=getPRBundle&repo=${encodeURIComponent(repo)}&number=${number}`);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const data = await r.json();
+    let data;
+    // se a fonte tem API key salva → busca direto do navegador (funciona sem function)
+    const ghToken = (window.Connectors && Connectors.tokenForRepo) ? await Connectors.tokenForRepo(repo) : null;
+    if (ghToken) {
+      data = { ok: true, result: await Connectors.ghPRBundle(repo, number, ghToken) };
+    } else {
+      const r = await fetch(`/.netlify/functions/github-api?action=getPRBundle&repo=${encodeURIComponent(repo)}&number=${number}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      data = await r.json();
+    }
     if (!data.ok) throw new Error(data.erro || 'erro desconhecido');
     if (prModalActive !== `${repo}#${number}`) return; // user trocou
     renderPRModalFull(repo, number, data.result);

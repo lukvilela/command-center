@@ -63,6 +63,11 @@ const CCNative = (() => {
     ]);
     cache = { lists, members, labels, rawCards };
 
+    // restaura o overlay do GitHub salvo no projeto (sobrevive reload/troca de workspace)
+    if (!_github && project.settings && project.settings.githubOverlay) {
+      _github = project.settings.githubOverlay;
+    }
+
     const listById = Object.fromEntries(lists.map(l => [l.id, l]));
     const memById = Object.fromEntries(members.map(m => [m.id, m]));
     const lblById = Object.fromEntries(labels.map(l => [l.id, l]));
@@ -110,14 +115,12 @@ const CCNative = (() => {
     const byList = {};
     for (const c of active) byList[c.list] = (byList[c.list] || 0) + 1;
 
-    // byDev (mesmas listas de trabalho do snapshot)
-    const workingLists = ['In Progress (Max 2/dev)', 'Testing / Sandbox', 'Blocked'];
+    // byDev — carga por pessoa em cards ABERTOS (não-done), genérico p/ qualquer projeto
     const byDev = {};
-    for (const c of active.filter(c => workingLists.includes(c.list))) {
+    for (const c of active.filter(c => c.status !== 'done')) {
       for (const m of c.members) {
         if (!byDev[m.name]) byDev[m.name] = { inProgress: [], sandbox: [], blocked: [] };
-        const slot = c.list === 'In Progress (Max 2/dev)' ? 'inProgress'
-                   : c.list === 'Testing / Sandbox' ? 'sandbox' : 'blocked';
+        const slot = c.status === 'blocked' ? 'blocked' : c.status === 'testing' ? 'sandbox' : 'inProgress';
         byDev[m.name][slot].push({ idShort: c.idShort, name: c.name, url: c.url });
       }
     }

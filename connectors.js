@@ -15,6 +15,9 @@
 const Connectors = (() => {
 
   const slug = (s) => String(s || '').toLowerCase();
+  // prioridade a partir de labels P0..P3; epic a partir de [EPIC] no título
+  const priorityFromLabels = (labels) => ((labels || []).map(l => l.name).find(n => /^P[0-3]$/.test(n))) || null;
+  const epicFromTitle = (t) => (String(t || '').match(/\[(\w+)\]/) || [])[1] || null;
 
   // ── Cliente GitHub que roda NO NAVEGADOR (api.github.com tem CORS p/ token).
   //    Usado quando a fonte tem API key salva → puxa/manipula sem function/servidor.
@@ -102,6 +105,20 @@ const Connectors = (() => {
         default: throw new Error('ação GitHub desconhecida: ' + action);
       }
     },
+
+    // detalhe completo de um PR (files, reviews, comments, checks) — p/ o modal, client-side
+    async prBundle(repo, number, token) {
+      const pr = await this.api(`/repos/${repo}/pulls/${number}`, token);
+      const head = pr.head && pr.head.sha;
+      const [files, reviews, reviewComments, comments, checks] = await Promise.all([
+        this.api(`/repos/${repo}/pulls/${number}/files?per_page=100`, token).catch(() => []),
+        this.api(`/repos/${repo}/pulls/${number}/reviews`, token).catch(() => []),
+        this.api(`/repos/${repo}/pulls/${number}/comments?per_page=50`, token).catch(() => []),
+        this.api(`/repos/${repo}/issues/${number}/comments?per_page=50`, token).catch(() => []),
+        head ? this.api(`/repos/${repo}/commits/${head}/check-runs?per_page=50`, token).catch(() => ({ check_runs: [] })) : { check_runs: [] },
+      ]);
+      return { pr, files, reviews, reviewComments, comments, checks };
+    },
   };
 
   // resolve o token salvo na source de um repo (p/ writes client-side)
@@ -171,6 +188,16 @@ const Connectors = (() => {
     const labelCache = {};
     for (const l of await CC.labels.byProject(pid)) labelCache[l.name] = l.id;
 
+    // cria membro a partir de um login do GitHub (idempotente) → popula a página Devs
+    async function ensureMember(login) {
+      if (!login) return null;
+      const k = slug(login);
+      if (memberByLogin[k]) return memberByLogin[k];
+      const m = await CC.members.create({ project_id: pid, name: login, github_login: login, emoji: '🧑‍💻', color: '#58a6ff' });
+      memberByLogin[k] = m.id;
+      return m.id;
+    }
+
     const overlay = { fetchedAt: new Date().toISOString(), repos: {}, cardLinks: {} };
     const mergeLink = (id, slot, arr) => {
       if (!overlay.cardLinks[id]) overlay.cardLinks[id] = { prs: [], commits: [] };
@@ -218,23 +245,26 @@ const Connectors = (() => {
         const closed = iss.state === 'closed';
         const exist = mineExisting[eid];
         if (exist) {
-          // update SÓ conteúdo — preserva coluna/posição (drag do usuário)
+          // atualiza conteúdo + epic/prioridade/membros — NÃO mexe em coluna/posição (drag do usuário)
           await CC.cards.update(exist.id, {
             title: iss.title, body: iss.body || '', external_url: iss.url, external_raw: iss,
+            epic: epicFromTitle(iss.title), priority: priorityFromLabels(iss.labels),
           });
+          for (const login of (iss.assignees || [])) { const mid = await ensureMember(login); if (mid) await CC.assign(exist.id, mid); }
           issuesUpdated++;
         } else {
           const card = await CC.cards.create({
             project_id: pid, list_id: closed ? doneListId : openListId,
             seq: iss.number, title: iss.title, body: iss.body || '',
             position: 1000 + iss.number,
+            epic: epicFromTitle(iss.title), priority: priorityFromLabels(iss.labels),
             source_id: src.id, external_kind: 'github_issue',
             external_id: eid, external_url: iss.url, external_raw: iss,
           });
           existingCards.push({ ...card, source_id: src.id, external_kind: 'github_issue', external_id: eid });
-          // assignees → membros existentes; labels → ensure + attach
+          // assignees → cria/atribui membro; labels → ensure + attach
           for (const login of (iss.assignees || [])) {
-            const mid = memberByLogin[slug(login)];
+            const mid = await ensureMember(login);
             if (mid) await CC.assign(card.id, mid);
           }
           for (const lb of (iss.labels || [])) {
@@ -256,16 +286,19 @@ const Connectors = (() => {
         const title = `PR #${pr.number}: ${pr.title}`;
         const exist = minePR[eid];
         if (exist) {
-          await CC.cards.update(exist.id, { title, body: pr.body || '', external_url: pr.url, external_raw: pr });
+          await CC.cards.update(exist.id, { title, body: pr.body || '', external_url: pr.url, external_raw: pr,
+            epic: epicFromTitle(pr.title), priority: priorityFromLabels(pr.labels) });
+          const mid = await ensureMember(pr.author); if (mid) await CC.assign(exist.id, mid);
           prsUpdated++;
         } else {
           const card = await CC.cards.create({
             project_id: pid, list_id: closed ? doneListId : openListId,
             seq: pr.number, title, body: pr.body || '', position: 1000 + pr.number,
+            epic: epicFromTitle(pr.title), priority: priorityFromLabels(pr.labels),
             source_id: src.id, external_kind: 'github_pr', external_id: eid, external_url: pr.url, external_raw: pr,
           });
           existingCards.push({ ...card });
-          const mid = memberByLogin[slug(pr.author || '')];
+          const mid = await ensureMember(pr.author);
           if (mid) await CC.assign(card.id, mid);
           for (const lb of (pr.labels || [])) {
             const lid = await ensureLabel(pid, lb.name, lb.color, labelCache);
@@ -295,6 +328,11 @@ const Connectors = (() => {
       try { await CC.externalRefs.replaceForCard(card.id, refs); } catch (e) { /* não-fatal */ }
     }
 
+    // PERSISTE o overlay no projeto → sobrevive a reload e troca de workspace
+    try {
+      await CC.projects.update(pid, { settings: Object.assign({}, CCNative.project.settings, { githubOverlay: overlay }) });
+      if (CCNative.project) CCNative.project.settings = Object.assign({}, CCNative.project.settings, { githubOverlay: overlay });
+    } catch (e) { /* não-fatal */ }
     // entrega o overlay pro app (página GitHub / badges / timeline)
     if (window.CCNative && CCNative.setGithub) CCNative.setGithub(overlay);
 
@@ -305,6 +343,7 @@ const Connectors = (() => {
   return {
     syncGitHub, resolveGithubSources, tokenForRepo,
     ghWrite: (action, data, token) => GH.write(action, data, token),
+    ghPRBundle: (repo, number, token) => GH.prBundle(repo, number, token),
   };
 })();
 

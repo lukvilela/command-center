@@ -18,6 +18,31 @@ const state = {
 let TEAM_USERS = [];
 let CONFIG = null;
 
+// ── Rede de segurança global (demo insurance) ──────────────────────────
+// Captura qualquer erro não tratado / promessa rejeitada e mostra um toast
+// discreto em vez de falhar calado no console. Throttle pra não spammar.
+(function installGlobalErrorNet() {
+  let lastShown = 0;
+  const notify = (label, msg) => {
+    const now = Date.now();
+    if (now - lastShown < 4000) return; // no máximo 1 toast a cada 4s
+    lastShown = now;
+    const text = String(msg == null ? '' : msg).slice(0, 140);
+    if (typeof showToast === 'function') showToast(`⚠️ ${label}: ${text}`, 'error');
+    console.error(`[${label}]`, msg);
+  };
+  window.addEventListener('error', (e) => {
+    // ignora falhas de recurso (img/script/css) — não quebram o app
+    const tgt = e && e.target;
+    if (tgt && tgt !== window && (tgt.tagName === 'IMG' || tgt.tagName === 'SCRIPT' || tgt.tagName === 'LINK')) return;
+    notify('Erro inesperado', (e && (e.message || (e.error && e.error.message))) || 'erro');
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    const reason = e && e.reason;
+    notify('Falha não tratada', (reason && (reason.message || reason)) || 'rejeição');
+  });
+})();
+
 async function loadConfig() {
   try {
     const r = await fetch('config.json?_=' + Date.now());

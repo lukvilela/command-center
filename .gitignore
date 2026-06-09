@@ -7,3 +7,5 @@ node_modules/
 config.json
 data/
 notes.md
+test-results/
+playwright-report/

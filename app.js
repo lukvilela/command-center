@@ -406,11 +406,15 @@ function renderHeader() {
     ${d.counts.activeCards} ativos · ${timeAgo(d.refreshedAt)}
   `;
 
-  // Top right links
+  // Top right links — genérico (não assume repos 'api'/'web' como no TryEvo legado)
   $('#trello-link').href = d.boardUrl || '#';
-  if (g) {
-    $('#api-link').href = g.repos.api.url;
-    $('#web-link').href = g.repos.web.url;
+  if (g && g.repos) {
+    const repos = Object.values(g.repos).filter(r => r && r.url);
+    const apiRepo = g.repos.api || repos[0];
+    const webRepo = g.repos.web || repos[1] || repos[0];
+    const apiLink = $('#api-link'), webLink = $('#web-link');
+    if (apiLink) { if (apiRepo) apiLink.href = apiRepo.url; else apiLink.style.display = 'none'; }
+    if (webLink) { if (webRepo) webLink.href = webRepo.url; else webLink.style.display = 'none'; }
   }
 
   // Nav badges
@@ -453,6 +457,12 @@ window.addEventListener('hashchange', navigate);
 
 // ═══════════════════════════ RENDER ═══════════════════════════
 function render() {
+  // Settings: módulo próprio (renderiza no #page, funciona até sem derived)
+  if (state.route === 'settings') {
+    if (window.CCSettings) CCSettings.renderPage($('#page'));
+    else $('#page').innerHTML = '<div class="empty">Configurações indisponíveis.</div>';
+    return;
+  }
   if (!state.derived) return;
   const route = state.route;
   const renders = {
@@ -516,18 +526,21 @@ function renderOverview() {
     </div>
   `;
 
-  // GitHub mini stats
-  if (g) {
-    const apiOpen = g.repos.api.prs.filter(p => p.state === 'OPEN').length;
-    const webOpen = g.repos.web.prs.filter(p => p.state === 'OPEN').length;
-    const conflicting = Object.values(g.repos).reduce((s, r) => s + r.prs.filter(p => p.mergeable === 'CONFLICTING').length, 0);
-    stats += `
-      <div class="stats" style="margin-top:-12px">
-        <div class="stat"><div class="label">PRs API abertos</div><div class="value">${apiOpen}</div></div>
-        <div class="stat"><div class="label">PRs Web abertos</div><div class="value">${webOpen}</div></div>
-        <div class="stat ${conflicting ? 'alert-stat' : ''}"><div class="label">Conflicting</div><div class="value">${conflicting}</div></div>
-      </div>
-    `;
+  // GitHub/GitLab mini stats — genérico (agrega todas as fontes, sem assumir 'api'/'web')
+  if (g && g.repos) {
+    const allRepos = Object.values(g.repos).filter(r => r && Array.isArray(r.prs));
+    const repoCount = allRepos.length;
+    const openPRs = allRepos.reduce((s, r) => s + r.prs.filter(p => p.state === 'OPEN').length, 0);
+    const conflicting = allRepos.reduce((s, r) => s + r.prs.filter(p => p.mergeable === 'CONFLICTING').length, 0);
+    if (repoCount) {
+      stats += `
+        <div class="stats" style="margin-top:-12px">
+          <div class="stat"><div class="label">Fontes conectadas</div><div class="value">${repoCount}</div></div>
+          <div class="stat"><div class="label">PRs/MRs abertos</div><div class="value">${openPRs}</div></div>
+          <div class="stat ${conflicting ? 'alert-stat' : ''}"><div class="label">Conflicting</div><div class="value">${conflicting}</div></div>
+        </div>
+      `;
+    }
   }
 
   // Notas
@@ -4064,6 +4077,7 @@ function setupGlobalCardClickDelegation() {
 
 setupGlobalCardClickDelegation();
 setupKeyboardShortcuts();
+if (window.CCAutomations) CCAutomations.initCommandPalette();
 navigate();
 setupSearch();
 setupRefreshBtn();

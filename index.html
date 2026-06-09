@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TryEvo Command Center</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="settings.css">
 </head>
 <body>
   <aside class="sidebar">
@@ -52,6 +53,9 @@
       </a>
       <a href="#/docs" class="nav-item" data-route="docs">
         <span class="nav-icon">📚</span><span>Docs</span>
+      </a>
+      <a href="#/settings" class="nav-item" data-route="settings">
+        <span class="nav-icon">⚙️</span><span>Configurações</span>
       </a>
     </nav>
 
@@ -117,6 +121,9 @@
   <script type="module" src="supabase.js"></script>
   <script src="native.js"></script>
   <script src="connectors.js"></script>
+  <script src="connectors-gitlab.js"></script>
+  <script src="automations.js"></script>
   <script src="app.js"></script>
+  <script src="settings.js"></script>
 </body>
 </html>

@@ -206,8 +206,24 @@ const CCNative = (() => {
         for (const lid of (d.idLabels || [])) await CC.addLabel(card.id, lid);
         return R({ id: card.id, idShort: seq, name: card.title });
       }
-      case 'moveCard':
-        return R(await CC.cards.move(d.id, d.idList, nextPos(d.idList)));
+      case 'moveCard': {
+        const movingCard = cache.rawCards.find(c => c.id === d.id) || { id: d.id };
+        const toList = cache.lists.find(l => l.id === d.idList);
+        // automação: WIP enforce pode bloquear o move
+        if (window.CCAutomations && CCAutomations.onBeforeMove) {
+          const chk = CCAutomations.onBeforeMove(movingCard, toList);
+          if (chk && chk.allow === false) {
+            if (window.showToast) showToast(chk.reason, 'error');
+            throw new Error(chk.reason || 'Movimento bloqueado (WIP)');
+          }
+        }
+        const moved = await CC.cards.move(d.id, d.idList, nextPos(d.idList));
+        // automação: card→Done fecha/mergeia issue/PR (fire-and-forget)
+        if (window.CCAutomations && CCAutomations.onAfterMove) {
+          Promise.resolve(CCAutomations.onAfterMove(movingCard, toList)).catch(() => {});
+        }
+        return R(moved);
+      }
       case 'updateCard': {
         const patch = {};
         if (d.name != null) patch.title = d.name;
@@ -372,7 +388,7 @@ const CCNative = (() => {
   // ---- GERENCIADOR DE FONTES (multi-repo) ----------------------------------
   const SOURCE_META = {
     github_repo:    { icon: '🐙', label: 'GitHub repo',   placeholder: 'owner/name (um por linha)', enabled: true },
-    gitlab_project: { icon: '🦊', label: 'GitLab',        placeholder: 'em breve', enabled: false },
+    gitlab_project: { icon: '🦊', label: 'GitLab project', placeholder: 'group/name (um por linha)', enabled: true },
     trello_board:   { icon: '📌', label: 'Trello board',  placeholder: 'em breve', enabled: false },
     website:        { icon: '🌐', label: 'Website',        placeholder: 'em breve', enabled: false },
   };
@@ -415,12 +431,19 @@ const CCNative = (() => {
           <textarea id="cc-src-input" rows="2" placeholder="lukvilela/manga-store&#10;lukvilela/kanaru"></textarea>
           <label style="margin-top:10px">🔑 API key (token) <small>— GitHub PAT (<code>ghp_…</code> / <code>github_pat_…</code>)</small></label>
           <input id="cc-src-token" type="password" placeholder="cole o token aqui (read p/ ler, write p/ mergear/comentar)" autocomplete="off">
-          <p class="cc-src-keynote">🔒 A chave fica salva no seu projeto Supabase e é usada pra puxar/manipular o GitHub <strong>direto do navegador</strong> (funciona sem servidor). Em ferramenta pessoal, ok — a Fase 2 troca por login.</p>
+          <p class="cc-src-keynote">🔒 A chave fica salva no seu projeto Supabase e é usada pra puxar/manipular <strong>direto do navegador</strong> (funciona sem servidor). Em ferramenta pessoal, ok — a Fase 2 troca por login.</p>
+
+          <label style="margin-top:14px">🦊 Conectar projeto(s) GitLab <small>(um por linha — <code>group/name</code>)</small></label>
+          <textarea id="cc-src-gl-input" rows="2" placeholder="meu-grupo/meu-projeto"></textarea>
+          <label style="margin-top:10px">🔑 API key GitLab <small>— Personal Access Token (scope <code>api</code>)</small></label>
+          <input id="cc-src-gl-token" type="password" placeholder="glpat-…" autocomplete="off">
+
           <div class="cc-src-actions">
-            <button id="cc-src-add-btn">➕ Conectar</button>
-            <button id="cc-src-sync-btn" class="primary">🐙 Puxar tudo</button>
+            <button id="cc-src-add-btn">➕ Conectar GitHub</button>
+            <button id="cc-src-gl-add-btn">➕ Conectar GitLab</button>
+            <button id="cc-src-sync-btn" class="primary">🔄 Puxar tudo</button>
           </div>
-          <p class="cc-src-soon">Em breve: 🦊 GitLab · 📌 Trello · 🌐 Website</p>
+          <p class="cc-src-soon">Em breve: 📌 Trello · 🌐 Website</p>
         </div>
       </div>`;
 
@@ -446,19 +469,47 @@ const CCNative = (() => {
       (window.showToast || (() => {}))(`✅ ${repos.length} repo(s) conectado(s)${token ? ' com chave' : ''}`, 'success');
       renderSourcesPanel(overlay);
     };
+    overlay.querySelector('#cc-src-gl-add-btn').onclick = async () => {
+      const raw = overlay.querySelector('#cc-src-gl-input').value;
+      const token = (overlay.querySelector('#cc-src-gl-token').value || '').trim();
+      const projs = [...new Set(raw.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean))]
+        .filter(r => /^[^/]+\/.+$/.test(r));
+      if (!projs.length) { (window.showToast || alert)('Formato: group/name (um por linha)'); return; }
+      const all = await CC.sources.byProject(project.id);
+      for (const repo of projs) {
+        const existing = all.find(s => s.type === 'gitlab_project' && s.config && s.config.repo === repo);
+        const config = token ? { repo, token } : { repo };
+        if (existing) await CC.sources.update(existing.id, { config });
+        else await CC.sources.create({ project_id: project.id, type: 'gitlab_project', display_name: repo.split('/').pop(), config });
+      }
+      (window.showToast || (() => {}))(`✅ ${projs.length} projeto(s) GitLab conectado(s)${token ? ' com chave' : ''}`, 'success');
+      renderSourcesPanel(overlay);
+    };
     overlay.querySelector('#cc-src-sync-btn').onclick = () => { overlay.remove(); ghSyncFlow(); };
   }
 
   async function ghSyncFlow() {
     const toast = window.showToast || ((m) => console.log(m));
-    if (!window.Connectors) { toast('connectors.js não carregado', 'error'); return; }
-    try {
-      const out = await window.Connectors.syncGitHub((msg) => toast(msg, 'info'));
-      toast(`✅ GitHub: ${out.issuesAbsorbed} issues + ${out.prsAbsorbed} PRs novos`, 'success');
-      if (window.loadData) await window.loadData(true);
-    } catch (e) {
-      toast('Erro no sync GitHub: ' + e.message, 'error');
+    let any = false;
+    // GitHub
+    if (window.Connectors) {
+      try {
+        const out = await window.Connectors.syncGitHub((msg) => toast(msg, 'info'));
+        toast(`✅ GitHub: ${out.issuesAbsorbed} issues + ${out.prsAbsorbed} PRs`, 'success');
+        any = true;
+      } catch (e) {
+        if (!/Nenhum repo GitHub/.test(e.message)) toast('Erro GitHub: ' + e.message, 'error');
+      }
     }
+    // GitLab
+    if (window.ConnectorsGitLab) {
+      try {
+        const g = await window.ConnectorsGitLab.syncGitLab((msg) => toast(msg, 'info'));
+        if (g && !g.skipped) { toast(`✅ GitLab: ${g.issuesAbsorbed} issues + ${g.mrsAbsorbed} MRs`, 'success'); any = true; }
+      } catch (e) { toast('Erro GitLab: ' + e.message, 'error'); }
+    }
+    if (window.loadData) await window.loadData(true);
+    if (!any) toast('Nenhuma fonte conectada. Cole repos/projetos em 🔌 Fontes.', 'info');
   }
 
   async function importFlow() {

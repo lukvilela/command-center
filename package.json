@@ -5,6 +5,10 @@
   "description": "Dashboard executivo do board Trello TryEvo",
   "scripts": {
     "refresh": "node refresh.js",
-    "serve": "npx serve -l 8000 ."
+    "serve": "npx serve -l 8000 .",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
   }
 }

@@ -533,21 +533,66 @@ function bindReportButtons() {
   });
 }
 
+// ─── Colunas por "role" (config-driven, desacopla das listas do TryEvo) ─────
+// config.project.columns mapeia role -> { label, match:[nomes de lista] }.
+// Sem config, casa por heurística. Role sem lista no projeto = some (não renderiza).
+const DEFAULT_COLUMN_ROLES = [
+  { role: 'todo',    label: 'A fazer',      re: /to-?do|backlog|a fazer|aberto/i },
+  { role: 'doing',   label: 'Em andamento', re: /progress|andamento|doing|\bwip\b|em curso|—\s*open|\bopen\b/i },
+  { role: 'review',  label: 'Review',       re: /review|sandbox|testing|\bqa\b|valida|homolog/i },
+  { role: 'blocked', label: 'Bloqueado',    re: /block|bloq|impediment|travad/i },
+  { role: 'done',    label: 'Concluído',    re: /done|deployed|concl|closed|merg|finaliz|pronto/i },
+];
+
+function projectLists() { return (state.derived && state.derived.lists) || []; }
+
+// Resolve um role -> {role,label,listName,listId,count} ou null se o projeto não tem lista p/ ele.
+function resolveColumn(role) {
+  const lists = projectLists();
+  const byName = (state.derived && state.derived.counts && state.derived.counts.byList) || {};
+  const cfg = (CONFIG && CONFIG.project && CONFIG.project.columns) || null;
+  let label = role, listObj = null;
+  if (cfg && cfg[role]) {
+    label = cfg[role].label || role;
+    const matches = cfg[role].match || [];
+    listObj = lists.find((l) => matches.includes(l.name)) || null;
+  } else {
+    const def = DEFAULT_COLUMN_ROLES.find((d) => d.role === role);
+    if (def) { label = def.label; listObj = lists.find((l) => def.re.test(l.name)) || null; }
+  }
+  if (!listObj) return null;
+  return { role, label, listName: listObj.name, listId: listObj.id, count: byName[listObj.name] || 0 };
+}
+
+// Colunas resolvidas (só as que existem no projeto), na ordem dada.
+function resolveColumns(roles) {
+  return (roles || ['todo', 'doing', 'review', 'blocked', 'done']).map(resolveColumn).filter(Boolean);
+}
+
+// URL do repo p/ "Editar no GitHub" das docs — config-driven (project.docsRepo = "owner/repo" ou URL).
+function docsRepoUrl() {
+  let base = (CONFIG && CONFIG.project && CONFIG.project.docsRepo) || '';
+  if (!base) return '';
+  if (!/^https?:/.test(base)) base = `https://github.com/${base}`;
+  return base.replace(/\/$/, '');
+}
+
 // ═══════════════════════════ PAGE: OVERVIEW ═══════════════════════════
 function renderOverview() {
   const d = state.derived;
   const g = state.github;
   const lists = d.counts.byList || {};
 
-  // Stats
+  // Stats — colunas por role (config-driven; some o que o projeto não tem)
+  const statCols = resolveColumns(['todo', 'doing', 'review', 'blocked', 'done']);
   let stats = `
     <div class="stats">
-      <div class="stat"><div class="label">Backlog</div><div class="value">${lists['Backlog'] || 0}</div></div>
-      <div class="stat"><div class="label">To-Do</div><div class="value">${lists['To-Do'] || 0}</div></div>
-      <div class="stat"><div class="label">In Progress</div><div class="value">${lists['In Progress (Max 2/dev)'] || 0}</div><div class="sub">limite 2/dev</div></div>
-      <div class="stat ${(lists['Blocked'] || 0) > 0 ? 'alert-stat' : ''}"><div class="label">Blocked</div><div class="value">${lists['Blocked'] || 0}</div></div>
-      <div class="stat ${(lists['Testing / Sandbox'] || 0) > 5 ? 'warn-stat' : ''}"><div class="label">Sandbox</div><div class="value">${lists['Testing / Sandbox'] || 0}</div></div>
-      <div class="stat"><div class="label">Done atual</div><div class="value" style="color:var(--green)">${lists['Done / Deployed'] || 0}</div></div>
+      ${statCols.map((col) => {
+        const cls = col.role === 'blocked' && col.count > 0 ? 'alert-stat'
+          : col.role === 'review' && col.count > 5 ? 'warn-stat' : '';
+        const valStyle = col.role === 'done' ? ' style="color:var(--green)"' : '';
+        return `<div class="stat ${cls}"><div class="label">${escapeHtml(col.label)}</div><div class="value"${valStyle}>${col.count}</div></div>`;
+      }).join('')}
     </div>
   `;
 
@@ -580,29 +625,20 @@ function renderOverview() {
   const myCards = trelloName
     ? d.cards.filter(c => !c.cardClosed && !c.listClosed && c.members.some(m => m.name === trelloName))
     : [];
-  const myInProgress = myCards.filter(c => c.list === 'In Progress (Max 2/dev)');
-  const mySandbox = myCards.filter(c => c.list === 'Testing / Sandbox');
-  const myBlocked = myCards.filter(c => c.list === 'Blocked');
-
-  // Helper pra pegar idList por nome
-  const getListId = (name) => {
-    const l = state.derived.lists.find(x => x.name === name);
-    return l ? l.id : '';
-  };
-  const inProgListId = getListId('In Progress (Max 2/dev)');
-  const sandboxListId = getListId('Testing / Sandbox');
-  const blockedListId = getListId('Blocked');
-
+  // Kanban pessoal — colunas por role (só as que o projeto tem; arrastável)
+  const flowCols = resolveColumns(['doing', 'review', 'blocked']);
+  const colClass = { doing: 'col-in-progress', review: 'col-sandbox', blocked: 'col-blocked' };
   const myCardsHtml = `
     <section class="section">
       <div class="section-header">
         <h2>${cur ? cur.emoji : '🎯'} Cards de ${cur ? escapeHtml(cur.name.split(' ')[0]) : 'você'} <span class="count">${myCards.length}</span></h2>
-        <span class="meta">arrasta entre colunas · In Progress · Sandbox · Blocked</span>
+        <span class="meta">arrasta entre colunas${flowCols.length ? ' · ' + flowCols.map(c => escapeHtml(c.label)).join(' · ') : ''}</span>
       </div>
       <div class="kanban">
-        <div class="kanban-col col-in-progress" data-list-id="${inProgListId}" data-list-name="In Progress (Max 2/dev)"><h3>In Progress <span class="count">${myInProgress.length}</span></h3><div class="cards-stack">${myInProgress.map(c => renderCardSmall(c, { draggable: true })).join('')}</div></div>
-        <div class="kanban-col col-sandbox" data-list-id="${sandboxListId}" data-list-name="Testing / Sandbox"><h3>Sandbox <span class="count">${mySandbox.length}</span></h3><div class="cards-stack">${mySandbox.map(c => renderCardSmall(c, { draggable: true })).join('')}</div></div>
-        <div class="kanban-col col-blocked" data-list-id="${blockedListId}" data-list-name="Blocked"><h3>Blocked <span class="count">${myBlocked.length}</span></h3><div class="cards-stack">${myBlocked.map(c => renderCardSmall(c, { draggable: true })).join('')}</div></div>
+        ${flowCols.map((col) => {
+          const cards = myCards.filter(c => c.list === col.listName);
+          return `<div class="kanban-col ${colClass[col.role] || ''}" data-list-id="${col.listId}" data-list-name="${escapeHtml(col.listName)}"><h3>${escapeHtml(col.label)} <span class="count">${cards.length}</span></h3><div class="cards-stack">${cards.map(c => renderCardSmall(c, { draggable: true })).join('')}</div></div>`;
+        }).join('')}
         ${myCards.length === 0 ? '<div class="empty">Nenhum card atribuído a você no momento — vá para Kanban e arraste cards aqui, ou crie um novo</div>' : ''}
       </div>
     </section>
@@ -834,7 +870,7 @@ function renderEpicsPage() {
                 <td><strong>#${c.idShort}</strong></td>
                 <td><span style="color:var(--fg-muted);font-size:11px">${c.tipo}</span></td>
                 <td>${escapeHtml(cleanTitle(c.name))}${statusBadge}</td>
-                <td><span style="color:var(--fg-muted);font-size:11px">${c.list === 'In Progress (Max 2/dev)' ? 'In Progress' : c.list}</span></td>
+                <td><span style="color:var(--fg-muted);font-size:11px">${SHORT_LIST[c.list] || c.list}</span></td>
                 <td>${c.priorityCode}</td>
                 <td>${prCell}</td>
                 <td><div style="display:flex;gap:2px">${c.members.map(m => `<span class="avatar" data-tooltip="${escapeHtml(m.name)}">${initials(m.name)}</span>`).join('')}</div></td>
@@ -940,7 +976,7 @@ function renderCardsList() {
         <td><strong>#${c.idShort}</strong></td>
         <td>${epicTag}</td>
         <td>${escapeHtml(cleanTitle(c.name))}</td>
-        <td><span style="color:var(--fg-muted);font-size:11px">${c.list === 'In Progress (Max 2/dev)' ? 'In Progress' : c.list}</span></td>
+        <td><span style="color:var(--fg-muted);font-size:11px">${SHORT_LIST[c.list] || c.list}</span></td>
         <td>${priorityLabel ? `<span style="color:${COLOR_MAP[priorityLabel.color]}">●</span> ${priorityLabel.name.split(' ').slice(1).join(' ')}` : '—'}</td>
         <td>${prCell || '—'}</td>
         <td><div style="display:flex;gap:2px">${memberAvatars}</div></td>
@@ -971,40 +1007,58 @@ function priorityOrder(c) {
 
 // ═══════════════════════════ PAGE: DEVS ═══════════════════════════
 function renderDevs() {
-  const d = state.derived;
-  const g = state.github;
-  const devs = Object.entries(d.byDev).sort((a, b) => {
-    const aT = a[1].inProgress.length + a[1].sandbox.length + a[1].blocked.length;
-    const bT = b[1].inProgress.length + b[1].sandbox.length + b[1].blocked.length;
-    return bT - aT;
-  });
+  // Carga por pessoa, computada CLIENT-SIDE a partir dos cards + colunas por role.
+  // Não depende mais do byDev moldado no TryEvo; mostra só os roles que o projeto tem.
+  const flow = resolveColumns(['doing', 'review', 'blocked']);
+  const wipLimit = (CONFIG && CONFIG.project && CONFIG.project.wipLimit) || null;
+  const roleOf = {};
+  flow.forEach((col) => { roleOf[col.listName] = col.role; });
+
+  const map = {};
+  for (const c of (state.derived.cards || [])) {
+    if (c.cardClosed || c.listClosed) continue;
+    const role = roleOf[c.list];
+    if (!role) continue;
+    for (const m of (c.members || [])) {
+      const name = (m && m.name) || m;
+      if (!name) continue;
+      map[name] = map[name] || {};
+      (map[name][role] = map[name][role] || []).push(c);
+    }
+  }
+
+  const total = (w) => flow.reduce((s, col) => s + ((w[col.role] || []).length), 0);
+  const devs = Object.entries(map).sort((a, b) => total(b[1]) - total(a[1]));
+  const liFor = (c) => `<li data-card-id="${c.idShort}" onclick="window.__openCard(event, ${c.idShort})" style="cursor:pointer">#${c.idShort} ${escapeHtml(cleanTitle(c.name))}</li>`;
 
   const cards = devs.map(([name, work]) => {
-    const overWip = work.inProgress.length > 2;
-    // PRs por dev
-    const prs = g ? Object.values(g.repos).flatMap(r => r.prs.filter(p => p.author && p.state === 'OPEN')) : [];
+    const doingCount = (work.doing || []).length;
+    const overWip = wipLimit && doingCount > wipLimit;
+    const rows = flow.map((col) => {
+      const list = work[col.role] || [];
+      const over = col.role === 'doing' && overWip;
+      const limitTxt = (col.role === 'doing' && wipLimit) ? `/${wipLimit}` : '';
+      return `<div class="row"><span class="label-tag">${escapeHtml(col.label)}</span><span class="count ${over ? 'warn' : ''}">${list.length}${limitTxt}</span></div>
+        ${list.length ? `<ul class="cards-list">${list.map(liFor).join('')}</ul>` : ''}`;
+    }).join('');
     return `
       <div class="dev-card ${overWip ? 'over-wip' : ''}">
         <div class="dev-header">
           <span class="avatar-lg">${initials(name)}</span>
           <div>
-            <div class="dev-name">${name}</div>
-            <div class="dev-meta">${work.inProgress.length + work.sandbox.length + work.blocked.length} cards ativos</div>
+            <div class="dev-name">${escapeHtml(name)}</div>
+            <div class="dev-meta">${total(work)} cards ativos</div>
           </div>
         </div>
-        <div class="row"><span class="label-tag">In Progress</span><span class="count ${overWip ? 'warn' : ''}">${work.inProgress.length}/2</span></div>
-        ${work.inProgress.length ? `<ul class="cards-list">${work.inProgress.map(c => `<li data-card-id="${c.idShort}" onclick="window.__openCard(event, ${c.idShort})" style="cursor:pointer">#${c.idShort} ${escapeHtml(cleanTitle(c.name))}</li>`).join('')}</ul>` : ''}
-        <div class="row"><span class="label-tag">Sandbox</span><span class="count">${work.sandbox.length}</span></div>
-        ${work.sandbox.length ? `<ul class="cards-list">${work.sandbox.map(c => `<li data-card-id="${c.idShort}" onclick="window.__openCard(event, ${c.idShort})" style="cursor:pointer">#${c.idShort} ${escapeHtml(cleanTitle(c.name))}</li>`).join('')}</ul>` : ''}
-        <div class="row"><span class="label-tag">Blocked</span><span class="count">${work.blocked.length}</span></div>
-        ${work.blocked.length ? `<ul class="cards-list">${work.blocked.map(c => `<li data-card-id="${c.idShort}" onclick="window.__openCard(event, ${c.idShort})" style="cursor:pointer">#${c.idShort} ${escapeHtml(cleanTitle(c.name))}</li>`).join('')}</ul>` : ''}
+        ${rows}
       </div>`;
   }).join('');
 
+  const flowLabels = flow.map((c) => escapeHtml(c.label)).join(' + ');
   return `
-    <h1 class="page-title">👥 Carga por dev</h1>
-    <p class="page-subtitle">${devs.length} devs com cards ativos · In Progress + Sandbox + Blocked</p>
-    <div class="devs">${cards}</div>`;
+    <h1 class="page-title">👥 Carga de trabalho</h1>
+    <p class="page-subtitle">${devs.length} ${devs.length === 1 ? 'pessoa' : 'pessoas'} com cards ativos${flowLabels ? ' · ' + flowLabels : ''}</p>
+    <div class="devs">${devs.length ? cards : '<div class="empty">Ninguém com cards ativos nas colunas de trabalho deste projeto.</div>'}</div>`;
 }
 
 // ═══════════════════════════ PAGE: GITHUB ═══════════════════════════
@@ -1213,7 +1267,7 @@ function renderRoadmap() {
                   <span style="font-weight:600">#${c.idShort}</span> ${escapeHtml(cleanTitle(c.name))}
                 </div>
                 <div class="roadmap-meta">
-                  📋 ${escapeHtml(c.list === 'In Progress (Max 2/dev)' ? 'In Progress' : c.list)}
+                  📋 ${escapeHtml(SHORT_LIST[c.list] || c.list)}
                   ${c.priorityCode ? ` · ${c.priorityCode}` : ''}
                 </div>
               </div>
@@ -1432,9 +1486,7 @@ function renderDocsPage() {
       <aside class="docs-sidebar">
         <div class="docs-sidebar-title">📖 Índice</div>
         ${navItems}
-        <div class="docs-source-link">
-          <a href="https://github.com/lukasvilela/tryevo-board-dashboard/tree/main/docs" target="_blank">📂 Editar no GitHub</a>
-        </div>
+        ${docsRepoUrl() ? `<div class="docs-source-link"><a href="${docsRepoUrl()}/tree/main/docs" target="_blank">📂 Editar no GitHub</a></div>` : ''}
       </aside>
       <article class="docs-main">
         ${breadcrumbs}
@@ -1500,9 +1552,12 @@ async function loadDocAndRender(slug) {
       a.setAttribute('href', `#/docs/${encodeURIComponent(target)}${anchor}`);
       a.removeAttribute('target');
     } else if (href.startsWith('../')) {
-      // Link external relativo (CLAUDE_NEW_DEV.md, _BOARD_INDEX.md, etc.)
-      a.setAttribute('href', `https://github.com/lukasvilela/tryevo-board-dashboard/blob/main/docs/${href.replace(/^\.\.\//, '../')}`);
-      a.setAttribute('target', '_blank');
+      // Link external relativo — só vira link do GitHub se o projeto definir docsRepo no config
+      const base = docsRepoUrl();
+      if (base) {
+        a.setAttribute('href', `${base}/blob/main/docs/${href.replace(/^\.\.\//, '../')}`);
+        a.setAttribute('target', '_blank');
+      }
     }
   });
 
@@ -3986,7 +4041,7 @@ async function enableNotifications() {
   if (perm === 'granted') {
     localStorage.setItem('tcc_notif_enabled', 'true');
     showToast('🔔 Notificações ativadas', 'success');
-    new Notification('TryEvo Command Center', { body: 'Notificações ativas! Você será avisado quando houver mudanças.', icon: '/favicon.ico' });
+    new Notification((CONFIG && CONFIG.project && CONFIG.project.name) || 'Command Center', { body: 'Notificações ativas! Você será avisado quando houver mudanças.', icon: '/favicon.ico' });
   } else {
     showToast('Permissão negada', 'error');
   }

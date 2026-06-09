@@ -193,8 +193,12 @@ test.describe('Command Center E2E', () => {
 
     const firstCard = page.locator('.kanban .card[data-card-id]').first();
     await expect(firstCard).toBeVisible();
-    await firstCard.scrollIntoViewIfNeeded();
-    await firstCard.click({ force: true });
+    // Dispara o clique na RAIZ do card (não num filho como o badge de PR, que o
+    // handler de delegação ignora de propósito) → abre o modal de forma determinística.
+    await page.evaluate(() => {
+      const card = document.querySelector('.kanban .card[data-card-id]');
+      if (card) { card.scrollIntoView({ block: 'center' }); card.click(); }
+    });
 
     const modal = page.locator('#modal');
     // Modal becomes visible by having its `hidden` attribute removed.

@@ -389,6 +389,7 @@ const CCNative = (() => {
   const SOURCE_META = {
     github_repo:    { icon: '🐙', label: 'GitHub repo',   placeholder: 'owner/name (um por linha)', enabled: true },
     gitlab_project: { icon: '🦊', label: 'GitLab project', placeholder: 'group/name (um por linha)', enabled: true },
+    jira_project:   { icon: '🟦', label: 'Jira project',   placeholder: 'KEY', enabled: true },
     trello_board:   { icon: '📌', label: 'Trello board',  placeholder: 'em breve', enabled: false },
     website:        { icon: '🌐', label: 'Website',        placeholder: 'em breve', enabled: false },
   };
@@ -438,9 +439,16 @@ const CCNative = (() => {
           <label style="margin-top:10px">🔑 API key GitLab <small>— Personal Access Token (scope <code>api</code>)</small></label>
           <input id="cc-src-gl-token" type="password" placeholder="glpat-…" autocomplete="off">
 
+          <label style="margin-top:14px">🟦 Conectar projeto Jira <small>— precisa de servidor (<code>netlify dev</code>/deploy; Jira bloqueia CORS)</small></label>
+          <input id="cc-src-jira-site" type="text" placeholder="minhaorg  (vira minhaorg.atlassian.net)">
+          <input id="cc-src-jira-key" type="text" placeholder="Project key — ex: KAN">
+          <input id="cc-src-jira-email" type="text" placeholder="seu-email@empresa.com">
+          <input id="cc-src-jira-token" type="password" placeholder="API token (id.atlassian.com/manage/api-tokens)" autocomplete="off">
+
           <div class="cc-src-actions">
-            <button id="cc-src-add-btn">➕ Conectar GitHub</button>
-            <button id="cc-src-gl-add-btn">➕ Conectar GitLab</button>
+            <button id="cc-src-add-btn">➕ GitHub</button>
+            <button id="cc-src-gl-add-btn">➕ GitLab</button>
+            <button id="cc-src-jira-add-btn">➕ Jira</button>
             <button id="cc-src-sync-btn" class="primary">🔄 Puxar tudo</button>
           </div>
           <p class="cc-src-soon">Em breve: 📌 Trello · 🌐 Website</p>
@@ -485,6 +493,21 @@ const CCNative = (() => {
       (window.showToast || (() => {}))(`✅ ${projs.length} projeto(s) GitLab conectado(s)${token ? ' com chave' : ''}`, 'success');
       renderSourcesPanel(overlay);
     };
+    overlay.querySelector('#cc-src-jira-add-btn').onclick = async () => {
+      const site = (overlay.querySelector('#cc-src-jira-site').value || '').trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+      const projectKey = (overlay.querySelector('#cc-src-jira-key').value || '').trim();
+      const email = (overlay.querySelector('#cc-src-jira-email').value || '').trim();
+      const token = (overlay.querySelector('#cc-src-jira-token').value || '').trim();
+      if (!site || !projectKey || !email || !token) { (window.showToast || alert)('Jira precisa de site, key, email e token'); return; }
+      const repo = `${site}/${projectKey}`;
+      const all = await CC.sources.byProject(project.id);
+      const existing = all.find(s => s.type === 'jira_project' && s.config && s.config.repo === repo);
+      const config = { repo, site, projectKey, email, token };
+      if (existing) await CC.sources.update(existing.id, { config });
+      else await CC.sources.create({ project_id: project.id, type: 'jira_project', display_name: projectKey, config });
+      (window.showToast || (() => {}))(`✅ Jira ${repo} conectado com chave`, 'success');
+      renderSourcesPanel(overlay);
+    };
     overlay.querySelector('#cc-src-sync-btn').onclick = () => { overlay.remove(); ghSyncFlow(); };
   }
 
@@ -507,6 +530,13 @@ const CCNative = (() => {
         const g = await window.ConnectorsGitLab.syncGitLab((msg) => toast(msg, 'info'));
         if (g && !g.skipped) { toast(`✅ GitLab: ${g.issuesAbsorbed} issues + ${g.mrsAbsorbed} MRs`, 'success'); any = true; }
       } catch (e) { toast('Erro GitLab: ' + e.message, 'error'); }
+    }
+    // Jira
+    if (window.ConnectorsJira) {
+      try {
+        const j = await window.ConnectorsJira.syncJira((msg) => toast(msg, 'info'));
+        if (j && !j.skipped) { toast(`✅ Jira: ${j.absorbed} issues`, 'success'); any = true; }
+      } catch (e) { toast('Erro Jira: ' + e.message, 'error'); }
     }
     if (window.loadData) await window.loadData(true);
     if (!any) toast('Nenhuma fonte conectada. Cole repos/projetos em 🔌 Fontes.', 'info');

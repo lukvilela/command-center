@@ -2326,3 +2326,10 @@ select.qa-input { appearance: none; cursor: pointer; padding-right: 30px;
 .cc-cmdk-lbl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cc-cmdk-sub { color: var(--fg-dim,#6e7681); font-size: 11px; }
 .cc-cmdk-empty { padding: 18px; text-align: center; color: var(--fg-dim,#6e7681); font-size: 13px; }
+
+/* inputs de texto no painel de Fontes (Jira) — mesmo visual do token */
+.cc-src-add input[type="text"] {
+  width: 100%; box-sizing: border-box; background: var(--bg,#0d1117); color: var(--fg,#e6edf3);
+  border: 1px solid var(--border,#30363d); border-radius: 8px; padding: 9px;
+  font-size: 12.5px; margin-top: 6px;
+}

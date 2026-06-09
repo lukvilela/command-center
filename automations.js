@@ -31,7 +31,7 @@ const CCAutomations = (() => {
 
   // ---- defaults + metadata -------------------------------------------------
   const DEFAULTS = Object.freeze({
-    closeOnDone: true,    // mover p/ coluna is_done fecha a issue / mergeia o PR linkado
+    closeOnDone: false,   // (opt-in) mover p/ coluna is_done fecha a issue / mergeia o PR linkado
     commentOnDone: false, // comenta na issue/PR ao concluir (auditoria)
     wipEnforce: false,    // bloqueia drop quando a coluna destino atinge o wip_limit
   });

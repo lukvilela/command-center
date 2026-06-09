@@ -6,9 +6,11 @@
   "scripts": {
     "refresh": "node refresh.js",
     "serve": "npx serve -l 8000 .",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "dev": "netlify dev"
   },
   "devDependencies": {
-    "@playwright/test": "^1.60.0"
+    "@playwright/test": "^1.60.0",
+    "netlify-cli": "^26.1.0"
   }
 }

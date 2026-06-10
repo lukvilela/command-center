@@ -1,7 +1,9 @@
 [build]
   publish = "."
   functions = "netlify/functions"
-  # Sem build step — site estático
+  # Site estático — comando no-op EXPLÍCITO impede a auto-detecção de "Hugo"
+  # (a CLI confunde por causa do config.json/data/docs na raiz e roda `hugo`, que não existe).
+  command = "echo 'static site, no build needed'"
 
 [functions]
   node_bundler = "esbuild"

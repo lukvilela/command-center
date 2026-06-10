@@ -41,13 +41,14 @@ const CCNative = (() => {
   const ageDays = (d) => d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null;
 
   function statusFromList(listName) {
+    // Mapeia nome de lista -> status semântico por heurística (genérico, sem nome de projeto).
     const n = listName || '';
-    if (/done/i.test(n)) return 'done';
-    if (/sandbox|testing/i.test(n)) return 'testing';
-    if (/in progress/i.test(n)) return 'in_progress';
-    if (/blocked/i.test(n)) return 'blocked';
+    if (/done|deployed|concl|closed|merg|finaliz|pronto/i.test(n)) return 'done';
+    if (/block|bloq|impediment|travad/i.test(n)) return 'blocked';
+    if (/review|sandbox|testing|\bqa\b|valida|homolog/i.test(n)) return 'testing';
+    if (/in.?progress|andamento|doing|\bwip\b|em curso|—\s*open|\bopen\b/i.test(n)) return 'in_progress';
     if (/icebox/i.test(n)) return 'icebox';
-    if (/to-?do/i.test(n)) return 'todo';
+    if (/to-?do|a fazer|aberto/i.test(n)) return 'todo';
     if (/backlog/i.test(n)) return 'backlog';
     return 'pending';
   }
@@ -127,11 +128,11 @@ const CCNative = (() => {
 
     // alerts essenciais
     const alerts = [];
-    for (const c of active.filter(c => c.list === 'In Progress (Max 2/dev)' && c.ageDays > 5)) {
+    for (const c of active.filter(c => c.status === 'in_progress' && c.ageDays > 5)) {
       alerts.push({ severity: c.ageDays > 14 ? 'critical' : 'warning', kind: 'stale_in_progress',
-        text: `#${c.idShort} ${c.name} — In Progress há ${c.ageDays} dias`, cardId: c.id, idShort: c.idShort, url: c.url });
+        text: `#${c.idShort} ${c.name} — em andamento há ${c.ageDays} dias`, cardId: c.id, idShort: c.idShort, url: c.url });
     }
-    for (const c of active.filter(c => c.list === 'Blocked' && c.ageDays > 7)) {
+    for (const c of active.filter(c => c.status === 'blocked' && c.ageDays > 7)) {
       alerts.push({ severity: c.ageDays > 30 ? 'critical' : 'warning', kind: 'silent_blocked',
         text: `#${c.idShort} ${c.name} — Bloqueado, sem update há ${c.ageDays} dias`, cardId: c.id, idShort: c.idShort, url: c.url });
     }

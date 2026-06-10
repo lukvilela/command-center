@@ -69,7 +69,7 @@ async function loadConfig() {
 function getUserPRs(user) {
   if (!state.github || !user || !user.githubLogin) return { open: [], merged: [], conflicting: [] };
   const allPRs = Object.values(state.github.repos).flatMap(r =>
-    r.prs.map(pr => ({ ...pr, repo: r.full.split('/')[1].replace('landit-tryevo-', '') }))
+    r.prs.map(pr => ({ ...pr, repo: r.full.split('/')[1].replace((CONFIG && CONFIG.project && CONFIG.project.repoPrefix) || '', '') }))
   );
   const mine = allPRs.filter(pr => {
     const login = (pr.author && (pr.author.login || pr.author.name)) || pr.author;
@@ -215,20 +215,29 @@ const COLOR_MAP = {
   blue_light: '#79c0ff', purple: '#d2a8ff', orange: '#f0883e',
   red_light: '#ffa198', yellow: '#e3b341', blue: '#58a6ff',
 };
-const LIST_ORDER = [
-  'Backlog', 'To-Do', 'In Progress (Max 2/dev)', 'Blocked',
-  'Testing / Sandbox', 'Done / Deployed', 'Icebox',
-];
-const SHORT_LIST = {
-  'In Progress (Max 2/dev)': 'In Progress',
-  'Testing / Sandbox': 'Sandbox',
-  'Done / Deployed': 'Done',
-};
-const COL_CLASS = {
-  'Blocked': 'col-blocked',
-  'Testing / Sandbox': 'col-sandbox',
-  'Done / Deployed': 'col-done',
-};
+// Classe CSS de coluna por role (colore blocked/review/done) — genérico, sem nomes de projeto.
+const ROLE_COL_CLASS = { blocked: 'col-blocked', review: 'col-sandbox', done: 'col-done' };
+
+// Label curto de uma lista: SÓ encurta se o projeto definir em config.project.shortLists;
+// senão mostra o nome real da lista do board. (Sem acoplamento a nenhum projeto.)
+function shortListName(name) {
+  if (!name) return name;
+  const sl = (CONFIG && CONFIG.project && CONFIG.project.shortLists) || null;
+  return (sl && sl[name]) || name;
+}
+
+// Classe CSS da coluna a partir do role que a lista representa (config.project.columns ou heurística).
+function colClassFor(name) {
+  const cfg = (CONFIG && CONFIG.project && CONFIG.project.columns) || null;
+  if (cfg) {
+    for (const role of Object.keys(cfg)) {
+      if (((cfg[role] && cfg[role].match) || []).includes(name)) return ROLE_COL_CLASS[role] || '';
+    }
+    return '';
+  }
+  const def = DEFAULT_COLUMN_ROLES.find((d) => d.re.test(name || ''));
+  return def ? (ROLE_COL_CLASS[def.role] || '') : '';
+}
 
 // ═══════════════════════════ HELPERS ═══════════════════════════
 function $(sel) { return document.querySelector(sel); }
@@ -305,7 +314,7 @@ function getPRsForCard(idShort) {
   return link ? link.prs : [];
 }
 
-// Resolve nome curto ('api', 'web') pro full path ('landit-labs/landit-tryevo-api')
+// Resolve nome curto de um repo pro full path (owner/repo) via fontes conectadas
 function getRepoFull(shortName) {
   if (!shortName) return '';
   if (shortName.includes('/')) return shortName;
@@ -871,7 +880,7 @@ function renderEpicsPage() {
                 <td><strong>#${c.idShort}</strong></td>
                 <td><span style="color:var(--fg-muted);font-size:11px">${c.tipo}</span></td>
                 <td>${escapeHtml(cleanTitle(c.name))}${statusBadge}</td>
-                <td><span style="color:var(--fg-muted);font-size:11px">${SHORT_LIST[c.list] || c.list}</span></td>
+                <td><span style="color:var(--fg-muted);font-size:11px">${shortListName(c.list)}</span></td>
                 <td>${c.priorityCode}</td>
                 <td>${prCell}</td>
                 <td><div style="display:flex;gap:2px">${c.members.map(m => `<span class="avatar" data-tooltip="${escapeHtml(m.name)}">${initials(m.name)}</span>`).join('')}</div></td>
@@ -919,11 +928,11 @@ function renderKanban() {
   const cols = allOpenLists.map(list => {
     const listName = list.name;
     const cards = (grouped[listName] || []).sort((a, b) => (b.ageDays || 0) - (a.ageDays || 0));
-    const colCls = COL_CLASS[listName] || '';
+    const colCls = colClassFor(listName);
     return `
       <div class="kanban-col ${colCls}" data-list-id="${list.id}" data-list-name="${escapeHtml(listName)}">
         <h3 class="list-header">
-          <span class="list-name" data-list-id="${list.id}" title="click pra renomear">${SHORT_LIST[listName] || escapeHtml(listName)}</span>
+          <span class="list-name" data-list-id="${list.id}" title="click pra renomear">${escapeHtml(shortListName(listName))}</span>
           <span class="count">${cards.length}</span>
           <button class="list-menu-btn" data-list-id="${list.id}" title="ações da lista">⋮</button>
         </h3>
@@ -977,7 +986,7 @@ function renderCardsList() {
         <td><strong>#${c.idShort}</strong></td>
         <td>${epicTag}</td>
         <td>${escapeHtml(cleanTitle(c.name))}</td>
-        <td><span style="color:var(--fg-muted);font-size:11px">${SHORT_LIST[c.list] || c.list}</span></td>
+        <td><span style="color:var(--fg-muted);font-size:11px">${shortListName(c.list)}</span></td>
         <td>${priorityLabel ? `<span style="color:${COLOR_MAP[priorityLabel.color]}">●</span> ${priorityLabel.name.split(' ').slice(1).join(' ')}` : '—'}</td>
         <td>${prCell || '—'}</td>
         <td><div style="display:flex;gap:2px">${memberAvatars}</div></td>
@@ -1268,7 +1277,7 @@ function renderRoadmap() {
                   <span style="font-weight:600">#${c.idShort}</span> ${escapeHtml(cleanTitle(c.name))}
                 </div>
                 <div class="roadmap-meta">
-                  📋 ${escapeHtml(SHORT_LIST[c.list] || c.list)}
+                  📋 ${escapeHtml(shortListName(c.list))}
                   ${c.priorityCode ? ` · ${c.priorityCode}` : ''}
                 </div>
               </div>
@@ -2661,7 +2670,7 @@ function renderCardModal(c, prs, commits) {
         <!-- Lista (movível) -->
         <h3>📋 Lista</h3>
         <select class="card-list-select" id="card-list-select">
-          ${lists.map(l => `<option value="${l.id}" ${l.name === c.list ? 'selected' : ''}>${escapeHtml(SHORT_LIST[l.name] || l.name)}</option>`).join('')}
+          ${lists.map(l => `<option value="${l.id}" ${l.name === c.list ? 'selected' : ''}>${escapeHtml(shortListName(l.name))}</option>`).join('')}
         </select>
 
         <!-- Members -->
@@ -3458,7 +3467,7 @@ function doSearch(q) {
           <span class="id">#${r.card.idShort}</span>
           ${epic ? `<span class="kind">${epic}</span>` : ''}
           <span style="flex:1">${escapeHtml(cleanTitle(r.card.name))}</span>
-          <span style="color:var(--fg-dim);font-size:11px">${SHORT_LIST[r.card.list] || r.card.list}</span>
+          <span style="color:var(--fg-dim);font-size:11px">${shortListName(r.card.list)}</span>
         </div>`;
     } else {
       return `
@@ -3832,7 +3841,7 @@ function setupBatchBar() {
   if (sel && state.derived) {
     const lists = state.derived.lists.filter(l => !l.closed);
     sel.innerHTML = '<option value="">Mover pra…</option>' +
-      lists.map(l => `<option value="${l.id}">${escapeHtml(SHORT_LIST[l.name] || l.name)}</option>`).join('');
+      lists.map(l => `<option value="${l.id}">${escapeHtml(shortListName(l.name))}</option>`).join('');
     sel.addEventListener('change', e => {
       const id = e.target.value;
       if (id) {

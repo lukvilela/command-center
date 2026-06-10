@@ -795,6 +795,16 @@ function renderEpicsPage() {
   const d = state.derived;
   const epics = d.epics || [];
 
+  if (epics.length === 0) {
+    return `
+      <h1 class="page-title">🎯 EPICs</h1>
+      <div class="empty">
+        <h2>Nenhum EPIC ainda</h2>
+        <p>EPICs agrupam cards por tema. Aparecem quando você define <code>epics</code> no <code>config.json</code> e usa o prefixo no início do título dos cards (ex: <code>INFRA: subir staging</code>).</p>
+        <div class="hint">Sem EPICs, use o <strong>Kanban</strong> ou <strong>Cards</strong> pra ver tudo.</div>
+      </div>`;
+  }
+
   // Aggregate stats
   const totalActive = d.cards.filter(c => !c.cardClosed && !c.listClosed).length;
   const totalDone = d.cards.filter(c => c.status === 'done').length;
@@ -3818,7 +3828,7 @@ function showShortcutsHelp() {
       <kbd>G E</kbd><span>EPICs</span>
       <kbd>G K</kbd><span>Kanban</span>
       <kbd>G C</kbd><span>Cards</span>
-      <kbd>G D</kbd><span>Devs</span>
+      <kbd>G D</kbd><span>Equipe</span>
       <kbd>G G</kbd><span>GitHub</span>
       <kbd>G T</kbd><span>Timeline</span>
       <kbd>G N</kbd><span>Notas</span>

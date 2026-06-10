@@ -174,7 +174,7 @@ function renderSavedFiltersSidebar() {
 function showUserPicker() {
   const cur = state.currentUser;
   const html = `
-    <button class="modal-close" id="up-close">×</button>
+    <button class="modal-close" id="up-close" title="Fechar (Esc)">×</button>
     <h2>👋 Quem é você?</h2>
     <p style="color:var(--fg-muted);margin-bottom:18px;font-size:13.5px">
       O dashboard personaliza overview, alertas e seus cards conforme quem você é.
@@ -182,7 +182,7 @@ function showUserPicker() {
     </p>
     <div class="user-picker">
       ${TEAM_USERS.map(u => `
-        <button class="user-pick-btn ${cur && cur.id === u.id ? 'active' : ''}" data-uid="${u.id}">
+        <button class="user-pick-btn ${cur && cur.id === u.id ? 'active' : ''}" data-uid="${u.id}" title="Ver o painel como ${escapeHtml(u.name)}">
           <div class="user-avatar" style="background:${u.color}">${u.emoji}</div>
           <div>
             <div class="user-pick-name">${escapeHtml(u.name)}</div>
@@ -839,7 +839,7 @@ function renderEpicsPage() {
         <div class="section-header">
           <h2>${epicMeta ? epicMeta.icon + ' ' : ''}EPIC ${focusEpic}: ${epicMeta ? escapeHtml(epicMeta.name) : ''} <span class="count">${epicCards.length}</span></h2>
           <span class="meta">${activeCount} ativos${archivedCount > 0 ? ` · ${archivedCount} arquivados/done` : ''}</span>
-          <button id="epic-clear-btn" style="padding: 4px 10px; font-size: 12px;">✕ limpar filtro</button>
+          <button id="epic-clear-btn" style="padding: 4px 10px; font-size: 12px;" title="Limpar o filtro de EPIC e ver todos os cards">✕ limpar filtro</button>
         </div>
         <table class="list">
           <thead><tr><th>ID</th><th>Tipo</th><th>Título</th><th>Lista</th><th>Prioridade</th><th>PR</th><th>Devs</th><th>Idade</th></tr></thead>
@@ -928,13 +928,13 @@ function renderKanban() {
           <button class="list-menu-btn" data-list-id="${list.id}" title="ações da lista">⋮</button>
         </h3>
         <div class="cards-stack">${cards.map(c => renderCardSmall(c, { draggable: true })).join('')}</div>
-        <button class="add-card-inline" data-list-id="${list.id}" data-list-name="${escapeHtml(listName)}">+ Adicionar card</button>
+        <button class="add-card-inline" data-list-id="${list.id}" data-list-name="${escapeHtml(listName)}" title="Criar um card direto nesta lista">+ Adicionar card</button>
       </div>`;
   }).join('');
 
   const addListCol = `
     <div class="kanban-col add-list-col">
-      <button class="add-list-btn" id="add-list-btn">+ Adicionar lista</button>
+      <button class="add-list-btn" id="add-list-btn" title="Criar uma nova lista/coluna no board">+ Adicionar lista</button>
     </div>
   `;
 
@@ -1399,8 +1399,8 @@ _Gerado pelo Command Center · ${new Date().toLocaleString('pt-BR')}_`;
     <p class="page-subtitle">Relatório semanal — copiável pra Slack/email/PowerPoint · markdown abaixo</p>
 
     <div style="display:flex;gap:8px;margin-bottom:18px">
-      <button id="copy-report-btn" style="background:var(--accent);color:var(--bg);font-weight:700;padding:10px 18px">📋 Copiar markdown</button>
-      <button id="download-report-btn" style="padding:10px 18px">💾 Download .md</button>
+      <button id="copy-report-btn" style="background:var(--accent);color:var(--bg);font-weight:700;padding:10px 18px" title="Copiar o status report em Markdown pro clipboard">📋 Copiar markdown</button>
+      <button id="download-report-btn" style="padding:10px 18px" title="Baixar o status report como arquivo .md">💾 Download .md</button>
       <span style="margin-left:auto;color:var(--fg-muted);font-size:12px;align-self:center">use no Slack, email, PR description, etc.</span>
     </div>
 
@@ -2287,7 +2287,7 @@ async function showPRModal(repo, number, prHint = null) {
 
   // Render skeleton com info que já temos
   const initial = prHint ? renderPRModalSkeleton(repo, number, prHint) : `
-    <button class="modal-close" id="modal-close">×</button>
+    <button class="modal-close" id="modal-close" title="Fechar (Esc)">×</button>
     <h2>🔄 Carregando PR ${repo}#${number}…</h2>
     <div class="loading">Buscando detalhes no GitHub…</div>
   `;
@@ -2313,7 +2313,7 @@ async function showPRModal(repo, number, prHint = null) {
     renderPRModalFull(repo, number, data.result);
   } catch (e) {
     $('#modal-content').innerHTML = `
-      <button class="modal-close" id="modal-close">×</button>
+      <button class="modal-close" id="modal-close" title="Fechar (Esc)">×</button>
       <h2>❌ Erro carregando PR</h2>
       <div class="empty">${escapeHtml(e.message)}<br><a href="https://github.com/${repo}/pull/${number}" target="_blank">Abrir no GitHub →</a></div>
     `;
@@ -2323,7 +2323,7 @@ async function showPRModal(repo, number, prHint = null) {
 
 function renderPRModalSkeleton(repo, number, prHint) {
   return `
-    <button class="modal-close" id="modal-close">×</button>
+    <button class="modal-close" id="modal-close" title="Fechar (Esc)">×</button>
     <h2><a href="${prHint.url}" target="_blank" style="color:inherit;text-decoration:none">${repo}#${number}</a> ${escapeHtml(prHint.title || '')}</h2>
     <div class="modal-meta">
       <span class="pr-state ${prHint.isDraft ? 'DRAFT' : prHint.state}">${prHint.isDraft ? 'DRAFT' : prHint.state}</span>
@@ -2461,17 +2461,17 @@ function renderPRModalFull(repo, number, bundle) {
   const prActionsHtml = `
     <div class="pr-actions">
       ${prIsOpen ? `
-        <button class="pr-act-btn merge" data-act="mergePR" ${pr.mergeable === false ? 'disabled title="em conflito"' : ''}>✅ Merge</button>
-        <button class="pr-act-btn danger" data-act="closePR">🚫 Fechar</button>` : ''}
-      ${(!prIsOpen && !prIsMerged) ? `<button class="pr-act-btn" data-act="reopenPR">♻️ Reabrir</button>` : ''}
+        <button class="pr-act-btn merge" data-act="mergePR" title="${pr.mergeable === false ? 'Em conflito — resolva antes de mergear' : 'Mergear este PR na branch base'}" ${pr.mergeable === false ? 'disabled' : ''}>✅ Merge</button>
+        <button class="pr-act-btn danger" data-act="closePR" title="Fechar o PR sem mergear">🚫 Fechar</button>` : ''}
+      ${(!prIsOpen && !prIsMerged) ? `<button class="pr-act-btn" data-act="reopenPR" title="Reabrir este PR fechado">♻️ Reabrir</button>` : ''}
       ${prIsMerged ? `<span class="pr-merged-tag">✔ mergeado</span>` : ''}
       <span class="pr-act-spacer"></span>
       <input type="text" id="pr-comment-input" class="pr-comment-input" placeholder="Comentar no PR…">
-      <button class="pr-act-btn" data-act="commentPR">💬 Comentar</button>
+      <button class="pr-act-btn" data-act="commentPR" title="Comentar neste PR (publica no GitHub)">💬 Comentar</button>
     </div>`;
 
   $('#modal-content').innerHTML = `
-    <button class="modal-close" id="modal-close">×</button>
+    <button class="modal-close" id="modal-close" title="Fechar (Esc)">×</button>
     <h2><a href="${pr.html_url}" target="_blank" style="color:inherit;text-decoration:none">${repo}#${number}</a></h2>
     <div style="font-size:16px;font-weight:500;margin-bottom:8px;color:var(--fg)">${escapeHtml(pr.title)}</div>
     <div class="modal-meta">
@@ -2643,7 +2643,7 @@ function renderCardModal(c, prs, commits) {
   ` : '';
 
   $('#modal-content').innerHTML = `
-    <button class="modal-close" id="modal-close">×</button>
+    <button class="modal-close" id="modal-close" title="Fechar (Esc)">×</button>
 
     <!-- Title (editable) -->
     <h2 class="card-title-edit" data-field="name" title="click pra editar"><span class="ed-text">${escapeHtml(cleanTitle(c.name))}</span></h2>
@@ -2691,13 +2691,13 @@ function renderCardModal(c, prs, commits) {
           </details>` : ''}
 
         <!-- Description -->
-        <h3>📝 Descrição <button class="mini-btn" id="edit-desc-btn">✏️ editar</button></h3>
+        <h3>📝 Descrição <button class="mini-btn" id="edit-desc-btn" title="Editar a descrição do card">✏️ editar</button></h3>
         <div class="desc card-desc-display markdown" id="card-desc-display">${c.desc ? renderMd(c.desc) : '<em style="color:var(--fg-dim)">sem descrição</em>'}</div>
         <div class="card-desc-edit" id="card-desc-edit" hidden>
           <textarea class="qa-input" id="card-desc-textarea" rows="8">${escapeHtml(c.desc || '')}</textarea>
           <div style="display:flex;gap:8px;margin-top:6px;justify-content:flex-end">
-            <button id="cancel-desc">Cancelar</button>
-            <button id="save-desc" style="background:var(--accent);color:var(--bg);font-weight:600">💾 Salvar</button>
+            <button id="cancel-desc" title="Descartar as alterações da descrição">Cancelar</button>
+            <button id="save-desc" style="background:var(--accent);color:var(--bg);font-weight:600" title="Salvar a descrição no board">💾 Salvar</button>
           </div>
         </div>
 
@@ -2705,7 +2705,7 @@ function renderCardModal(c, prs, commits) {
         <h3>📅 Data de entrega</h3>
         <div class="due-block">
           <input type="date" id="card-due-input" class="qa-input" style="max-width:200px" value="${c.due ? c.due.slice(0, 10) : ''}">
-          ${c.due ? '<button id="clear-due">×</button>' : ''}
+          ${c.due ? '<button id="clear-due" title="Remover o prazo deste card">×</button>' : ''}
           ${c.due ? `<label style="margin-left:auto;font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="due-complete" ${c.dueComplete ? 'checked' : ''}> Concluída</label>` : ''}
         </div>
 
@@ -2728,9 +2728,9 @@ function renderCardModal(c, prs, commits) {
 
       <div class="modal-side">
         <h3>⚡ Ações</h3>
-        ${(window.CCNative && CCNative.isNative()) ? `<button class="side-btn" id="gh-issue-btn">🐙 Criar issue no GitHub</button>` : ''}
-        <button class="side-btn" id="archive-card-btn">📦 Arquivar card</button>
-        <button class="side-btn danger" id="delete-card-btn">🗑️ Deletar (sem volta)</button>
+        ${(window.CCNative && CCNative.isNative()) ? `<button class="side-btn" id="gh-issue-btn" title="Criar uma issue no GitHub a partir deste card">🐙 Criar issue no GitHub</button>` : ''}
+        <button class="side-btn" id="archive-card-btn" title="Arquivar o card (some do board, recuperável)">📦 Arquivar card</button>
+        <button class="side-btn danger" id="delete-card-btn" title="Deletar o card permanentemente — não dá pra desfazer">🗑️ Deletar (sem volta)</button>
       </div>
     </div>
   `;
@@ -3018,7 +3018,7 @@ function renderChecklistsBlock(c) {
       <summary>+ Nova checklist</summary>
       <div style="display:flex;gap:6px;margin-top:8px">
         <input type="text" class="qa-input" id="new-checklist-name" placeholder="Nome (ex: DOR, DOD, Tasks)">
-        <button id="add-checklist-btn" style="background:var(--accent);color:var(--bg);font-weight:600">Criar</button>
+        <button id="add-checklist-btn" style="background:var(--accent);color:var(--bg);font-weight:600" title="Criar a checklist com este nome">Criar</button>
       </div>
     </details>
   `;
@@ -3156,7 +3156,7 @@ function renderAttachmentsBlock(c) {
       <div style="display:flex;gap:6px;margin-top:8px">
         <input type="url" class="qa-input" id="new-att-url" placeholder="https://...">
         <input type="text" class="qa-input" id="new-att-name" placeholder="Nome (opcional)" style="max-width:160px">
-        <button id="add-att-btn" style="background:var(--accent);color:var(--bg);font-weight:600">Anexar URL</button>
+        <button id="add-att-btn" style="background:var(--accent);color:var(--bg);font-weight:600" title="Anexar a URL informada ao card">Anexar URL</button>
       </div>
       <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
         <label class="upload-label" for="att-file-input">
@@ -3246,7 +3246,7 @@ function renderCommentsBlock(c) {
     <h3>💬 Comentários ${modalComments.length > 0 ? `(${modalComments.length})` : ''}</h3>
     <div class="add-comment-row">
       <textarea class="qa-input" id="new-comment-text" rows="2" placeholder="Escreva um comentário…"></textarea>
-      <button id="add-comment-btn" style="background:var(--accent);color:var(--bg);font-weight:600">💬 Comentar</button>
+      <button id="add-comment-btn" style="background:var(--accent);color:var(--bg);font-weight:600" title="Postar o comentário no card">💬 Comentar</button>
     </div>
     <div class="comments-list">
       ${modalComments.length === 0 ? '<div style="color:var(--fg-dim);font-size:12px">sem comentários</div>' :
@@ -3560,7 +3560,7 @@ async function githubWrite(action, data) {
 
 function showSecretPrompt() {
   $('#quick-add-content').innerHTML = `
-    <button class="modal-close" id="qa-close">×</button>
+    <button class="modal-close" id="qa-close" title="Fechar (Esc)">×</button>
     <h2>🔐 Autenticação necessária</h2>
     <p style="color:var(--fg-muted);margin-bottom:18px">
       Pra adicionar/editar/mover cards no Trello, você precisa do <strong>secret compartilhado</strong> do time.<br>
@@ -3568,8 +3568,8 @@ function showSecretPrompt() {
     </p>
     <input type="password" id="qa-secret" class="search" placeholder="Cole o secret aqui…" style="width:100%;margin-bottom:14px" autocomplete="off">
     <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button id="qa-cancel">Cancelar</button>
-      <button id="qa-save" style="background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600">Salvar</button>
+      <button id="qa-cancel" title="Cancelar sem salvar">Cancelar</button>
+      <button id="qa-save" style="background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600" title="Salvar as alterações">Salvar</button>
     </div>
     <p style="font-size:11.5px;color:var(--fg-dim);margin-top:14px">
       O secret fica salvo no localStorage do seu browser (não vai pro servidor).
@@ -3600,7 +3600,7 @@ function showQuickAddCard() {
   const labels = state.derived.labels.filter(l => l.name);
 
   $('#quick-add-content').innerHTML = `
-    <button class="modal-close" id="qa-close">×</button>
+    <button class="modal-close" id="qa-close" title="Fechar (Esc)">×</button>
     <h2>✨ Novo card no Trello</h2>
     <div class="qa-form">
       <label class="qa-label">📋 Lista
@@ -3625,10 +3625,10 @@ function showQuickAddCard() {
         </div>
       </label>
       <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:12px">
-        <button id="qa-template" style="background:var(--bg-3);font-size:11.5px">📋 Aplicar template POP+DOR+DOD</button>
+        <button id="qa-template" style="background:var(--bg-3);font-size:11.5px" title="Preencher a descrição com o template POP + DOR + DOD">📋 Aplicar template POP+DOR+DOD</button>
         <div style="display:flex;gap:8px">
-          <button id="qa-cancel">Cancelar</button>
-          <button id="qa-submit" style="background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700">✨ Criar card</button>
+          <button id="qa-cancel" title="Cancelar sem criar o card">Cancelar</button>
+          <button id="qa-submit" style="background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700" title="Criar o card com esses dados">✨ Criar card</button>
         </div>
       </div>
     </div>
@@ -3793,7 +3793,7 @@ function setupKeyboardShortcuts() {
 
 function showShortcutsHelp() {
   $('#quick-add-content').innerHTML = `
-    <button class="modal-close" id="qa-close">×</button>
+    <button class="modal-close" id="qa-close" title="Fechar (Esc)">×</button>
     <h2>⌨️ Atalhos de teclado</h2>
     <div style="display:grid;grid-template-columns:auto 1fr;gap:10px 16px;font-size:13.5px;margin-top:14px">
       <kbd>/</kbd><span>Foca na busca global</span>

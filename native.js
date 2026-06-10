@@ -423,7 +423,7 @@ const CCNative = (() => {
 
     overlay.innerHTML = `
       <div class="cc-modal">
-        <button class="cc-modal-x" id="cc-src-close">×</button>
+        <button class="cc-modal-x" id="cc-src-close" title="Fechar (Esc)">×</button>
         <h2>🔌 Projetos que "${escapeHtmlSafe(project.name)}" lê</h2>
         <p class="cc-src-sub">Cada projeto externo (repo/board) é uma fonte. Cole a <strong>API key</strong> dele e o Command Center puxa tudo direto — issues viram cards, PRs ficam linkados, e dá pra mergear/comentar daqui.</p>
         <div class="cc-src-list">${rows}</div>
@@ -446,10 +446,10 @@ const CCNative = (() => {
           <input id="cc-src-jira-token" type="password" placeholder="API token (id.atlassian.com/manage/api-tokens)" autocomplete="off">
 
           <div class="cc-src-actions">
-            <button id="cc-src-add-btn">➕ GitHub</button>
-            <button id="cc-src-gl-add-btn">➕ GitLab</button>
-            <button id="cc-src-jira-add-btn">➕ Jira</button>
-            <button id="cc-src-sync-btn" class="primary">🔄 Puxar tudo</button>
+            <button id="cc-src-add-btn" title="Adicionar o(s) repositório(s) GitHub acima como fonte">➕ GitHub</button>
+            <button id="cc-src-gl-add-btn" title="Adicionar o(s) projeto(s) GitLab acima como fonte">➕ GitLab</button>
+            <button id="cc-src-jira-add-btn" title="Adicionar o projeto Jira acima como fonte">➕ Jira</button>
+            <button id="cc-src-sync-btn" class="primary" title="Sincronizar todas as fontes agora — puxa issues (viram cards) e PRs">🔄 Puxar tudo</button>
           </div>
           <p class="cc-src-soon">Em breve: 📌 Trello · 🌐 Website</p>
         </div>

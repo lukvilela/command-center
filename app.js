@@ -394,7 +394,7 @@ async function loadData(silent = false) {
     $('#page').innerHTML = `
       <div class="empty" style="color: var(--red);">
         <strong>Erro carregando dados:</strong><br>${e.message}<br>
-        <div class="hint">Rode <code>node refresh.js</code> na pasta do projeto.</div>
+        <div class="hint">Confira o <code>config.json</code> e sincronize as fontes em <strong>🔌 Fontes → 🔄 Puxar tudo</strong>.</div>
       </div>`;
   }
 }
@@ -1074,11 +1074,13 @@ function renderDevs() {
 // ═══════════════════════════ PAGE: GITHUB ═══════════════════════════
 function renderGithub() {
   const g = state.github;
-  if (!g) {
+  if (!g || !g.repos || Object.keys(g.repos).length === 0) {
     return `
+      <h1 class="page-title">🐙 GitHub</h1>
       <div class="empty">
-        Sem dados do GitHub. Rode <code>node gh-sync.js</code>.
-        <div class="hint">Precisa do <code>gh</code> CLI autenticado como <code>lukasvilela</code>.</div>
+        <h2>Nenhuma fonte conectada ainda</h2>
+        <p>Conecte um repositório no seletor de projeto (topo do menu) → <strong>🔌 Fontes</strong> → cole <code>owner/repo</code> + a API key → <strong>🔄 Puxar tudo</strong>.</p>
+        <div class="hint">As issues viram cards, os PRs ficam linkados, e você vê PRs abertos, deploys e métricas aqui.</div>
       </div>`;
   }
 
@@ -1227,7 +1229,7 @@ function renderTimeline() {
   return `
     <h1 class="page-title">⏱️ Timeline</h1>
     <p class="page-subtitle">${recent.length} eventos recentes · PRs, commits e runs do GitHub</p>
-    ${recent.length ? `<div class="timeline">${items}</div>` : '<div class="empty">Sem dados — rode <code>node gh-sync.js</code></div>'}`;
+    ${recent.length ? `<div class="timeline">${items}</div>` : '<div class="empty">Sem atividade ainda. Conecte um repositório em <strong>🔌 Fontes → 🔄 Puxar tudo</strong> pra ver commits, PRs e deploys aqui.</div>'}`;
 }
 
 // ═══════════════════════════ PAGE: ROADMAP ═══════════════════════════

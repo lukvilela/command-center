@@ -38,7 +38,16 @@ cp .env.example .env
     "githubRepos": [
       { "name": "api", "full": "minha-org/projeto-api" },
       { "name": "web", "full": "minha-org/projeto-web" }
-    ]
+    ],
+    "columns": {                                          // ← OPCIONAL: role → listas reais do SEU board
+      "doing":   { "label": "Em andamento", "match": ["In Progress", "Doing"] },
+      "review":  { "label": "Review",       "match": ["Testing", "QA"] },
+      "blocked": { "label": "Bloqueado",    "match": ["Blocked"] },
+      "done":    { "label": "Concluído",    "match": ["Done", "Deployed"] }
+    },                                                    //   sem isso, detecta por heurística; role sem lista some
+    "wipLimit": 2,                                        // ← limite de "em andamento" por pessoa (opcional)
+    "docsRepo": "owner/repo",                             // ← repo das docs ('Editar no GitHub'); vazio esconde o link
+    "repoPrefix": "projeto-"                              // ← prefixo a esconder no nome dos repos (opcional)
   },
   "team": [
     {

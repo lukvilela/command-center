@@ -15,7 +15,22 @@
     "githubRepos": [
       { "name": "api", "full": "REPLACE_ME/seu-projeto-api" },
       { "name": "web", "full": "REPLACE_ME/seu-projeto-web" }
-    ]
+    ],
+
+    "_comment_columns": "OPCIONAL. Mapeia ROLES (todo/doing/review/blocked/done) -> nomes reais das listas do SEU board. Sem isso, a heurística detecta por nome automaticamente. Role sem lista correspondente simplesmente não aparece (ex: projeto sem coluna 'Bloqueado' não mostra o box).",
+    "columns": {
+      "todo":    { "label": "A fazer",      "match": ["To-Do", "Backlog"] },
+      "doing":   { "label": "Em andamento", "match": ["In Progress", "Doing", "🐙 GitHub — Open"] },
+      "review":  { "label": "Review",       "match": ["Testing / Sandbox", "In Review", "QA"] },
+      "blocked": { "label": "Bloqueado",    "match": ["Blocked"] },
+      "done":    { "label": "Concluído",    "match": ["Done", "Deployed", "🐙 GitHub — Done"] }
+    },
+
+    "_comment_extras": "Todos OPCIONAIS.",
+    "wipLimit": 2,
+    "docsRepo": "owner/repo do repositório das docs (botão 'Editar no GitHub'). Vazio = esconde o link.",
+    "shortLists": { "Nome longo da lista no board": "Nome curto no display" },
+    "repoPrefix": "prefixo-a-esconder- (ex: se seus repos são 'meuapp-api'/'meuapp-web', use 'meuapp-')"
   },
 
   "team": [

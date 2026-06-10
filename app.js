@@ -449,7 +449,8 @@ function renderHeader() {
     const failedRuns = Object.values(g.repos).reduce((sum, r) => sum + (r.stats.runsLastFailure && (!r.stats.runsLastSuccess || new Date(r.stats.runsLastSuccess.createdAt) < new Date(r.stats.runsLastFailure.createdAt)) ? 1 : 0), 0);
     setBadge('github', conflicting + failedRuns, '');
   }
-  const blocked = d.cards.filter(c => !c.cardClosed && !c.listClosed && c.list === 'Blocked').length;
+  const blockedCol = resolveColumn('blocked');
+  const blocked = blockedCol ? d.cards.filter(c => !c.cardClosed && !c.listClosed && c.list === blockedCol.listName).length : 0;
   setBadge('cards', blocked, 'warn');
 }
 
@@ -1326,10 +1327,11 @@ function renderReport() {
 
   const active = d.cards.filter(c => !c.cardClosed && !c.listClosed);
   const recentDone = d.cards.filter(c => /done/i.test(c.list || '') && c.dateLastActivity && new Date(c.dateLastActivity).getTime() > weekAgo);
-  const inProgress = active.filter(c => c.list === 'In Progress (Max 2/dev)');
-  const sandbox = active.filter(c => c.list === 'Testing / Sandbox');
-  const blocked = active.filter(c => c.list === 'Blocked');
-  const todo = active.filter(c => c.list === 'To-Do');
+  const cDoing = resolveColumn('doing'), cReview = resolveColumn('review'), cBlocked = resolveColumn('blocked'), cTodo = resolveColumn('todo');
+  const inProgress = cDoing ? active.filter(c => c.list === cDoing.listName) : [];
+  const sandbox = cReview ? active.filter(c => c.list === cReview.listName) : [];
+  const blocked = cBlocked ? active.filter(c => c.list === cBlocked.listName) : [];
+  const todo = cTodo ? active.filter(c => c.list === cTodo.listName) : [];
 
   const epics = d.epics || [];
 
@@ -1755,7 +1757,7 @@ function applyFilters(cards) {
     }
     // Presets
     if (state.filter.preset === 'mine' && (!userName || !c.members.some(m => m.name === userName))) return false;
-    if (state.filter.preset === 'blocked' && c.list !== 'Blocked') return false;
+    if (state.filter.preset === 'blocked') { const bc = resolveColumn('blocked'); if (!bc || c.list !== bc.listName) return false; }
     if (state.filter.preset === 'overdue') {
       if (!c.due || c.dueComplete) return false;
       if (new Date(c.due).getTime() > Date.now()) return false;
@@ -2659,7 +2661,7 @@ function renderCardModal(c, prs, commits) {
         <!-- Lista (movível) -->
         <h3>📋 Lista</h3>
         <select class="card-list-select" id="card-list-select">
-          ${lists.map(l => `<option value="${l.id}" ${l.name === c.list ? 'selected' : ''}>${escapeHtml(l.name === 'In Progress (Max 2/dev)' ? 'In Progress' : l.name)}</option>`).join('')}
+          ${lists.map(l => `<option value="${l.id}" ${l.name === c.list ? 'selected' : ''}>${escapeHtml(SHORT_LIST[l.name] || l.name)}</option>`).join('')}
         </select>
 
         <!-- Members -->
@@ -3456,7 +3458,7 @@ function doSearch(q) {
           <span class="id">#${r.card.idShort}</span>
           ${epic ? `<span class="kind">${epic}</span>` : ''}
           <span style="flex:1">${escapeHtml(cleanTitle(r.card.name))}</span>
-          <span style="color:var(--fg-dim);font-size:11px">${r.card.list === 'In Progress (Max 2/dev)' ? 'In Progress' : r.card.list}</span>
+          <span style="color:var(--fg-dim);font-size:11px">${SHORT_LIST[r.card.list] || r.card.list}</span>
         </div>`;
     } else {
       return `
@@ -3830,7 +3832,7 @@ function setupBatchBar() {
   if (sel && state.derived) {
     const lists = state.derived.lists.filter(l => !l.closed);
     sel.innerHTML = '<option value="">Mover pra…</option>' +
-      lists.map(l => `<option value="${l.id}">${escapeHtml(l.name === 'In Progress (Max 2/dev)' ? 'In Progress' : l.name)}</option>`).join('');
+      lists.map(l => `<option value="${l.id}">${escapeHtml(SHORT_LIST[l.name] || l.name)}</option>`).join('');
     sel.addEventListener('change', e => {
       const id = e.target.value;
       if (id) {

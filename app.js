@@ -593,6 +593,23 @@ function renderOverview() {
   const g = state.github;
   const lists = d.counts.byList || {};
 
+  // Onboarding (1ª vez): projeto zerado — sem cards e sem fonte conectada
+  const hasCards = (d.cards || []).some(c => !c.cardClosed && !c.listClosed);
+  const hasSources = g && g.repos && Object.keys(g.repos).length > 0;
+  if (!hasCards && !hasSources) {
+    return `
+      <div class="empty" style="max-width:640px;margin:48px auto;text-align:left">
+        <h1 style="margin-bottom:8px">👋 Bem-vindo ao Command Center</h1>
+        <p>Um painel único pros seus projetos — kanban, PRs, métricas e docs, de várias fontes num lugar só.</p>
+        <h2 style="margin-top:22px;font-size:16px">Pra começar, conecte sua 1ª fonte:</h2>
+        <ol style="line-height:1.9;padding-left:20px">
+          <li>No seletor de projeto (topo do menu) → <strong>🔌 Fontes</strong></li>
+          <li>Cole um repo <code>owner/nome</code> + a API key → <strong>🔄 Puxar tudo</strong></li>
+        </ol>
+        <div class="hint">As issues viram cards, os PRs ficam linkados, e os painéis (Overview, Kanban, Equipe, GitHub) acendem automaticamente.</div>
+      </div>`;
+  }
+
   // Stats — colunas por role (config-driven; some o que o projeto não tem)
   const statCols = resolveColumns(['todo', 'doing', 'review', 'blocked', 'done']);
   let stats = `
@@ -1319,7 +1336,7 @@ function renderRoadmap() {
       <section class="section">
         <div class="section-header">
           <h2 style="color:var(--fg-muted)">📋 Sem data <span class="count">${noDue.length}</span></h2>
-          <span class="meta">cards ativos sem data definida — útil pra priorizar</span>
+          <span class="meta">sem data de entrega — abra um card e defina 📅 pra entrar no cronograma (fontes GitHub geralmente não trazem data)</span>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
           ${noDue.slice(0, 30).map(c => {
@@ -1439,8 +1456,8 @@ function renderNotes() {
   const html = state.notes && window.marked ? window.marked.parse(state.notes) : '';
   return `
     <h1 class="page-title">📝 Notas executivas</h1>
-    <p class="page-subtitle">Edita o arquivo <code>notes.md</code> · salva e recarrega esta página</p>
-    <div class="notes-card">${html || '<div class="empty">Sem notas. Edita o arquivo <code>notes.md</code>.</div>'}</div>`;
+    <p class="page-subtitle">Resumo livre do projeto (opcional) — vem do arquivo <code>notes.md</code></p>
+    <div class="notes-card">${html || '<div class="empty">Sem notas ainda. Coloque um resumo no arquivo <code>notes.md</code> do projeto (opcional).</div>'}</div>`;
 }
 
 // ═══════════════════════════ PAGE: DOCS ═══════════════════════════

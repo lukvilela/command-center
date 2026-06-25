@@ -1,0 +1,22 @@
+{
+  "supabase": { "url": "", "anonKey": "" },
+  "project": {
+    "name": "Command Center",
+    "tagline": "demo · dados de exemplo",
+    "icon": "🎯",
+    "columns": {
+      "todo":    { "label": "A fazer",      "match": ["To-Do", "Backlog"] },
+      "doing":   { "label": "Em andamento", "match": ["In Progress"] },
+      "review":  { "label": "Review",       "match": ["Review"] },
+      "blocked": { "label": "Bloqueado",    "match": ["Blocked"] },
+      "done":    { "label": "Concluído",    "match": ["Done"] }
+    },
+    "wipLimit": 2
+  },
+  "team": [
+    { "id": "manual:ana",   "name": "Ana Souza",   "role": "Dev", "emoji": "🦊", "color": "#7aa2f7", "trelloName": "Ana Souza" },
+    { "id": "manual:bruno", "name": "Bruno Lima",  "role": "Dev", "emoji": "🐼", "color": "#9ece6a", "trelloName": "Bruno Lima" },
+    { "id": "manual:carla", "name": "Carla Dias",  "role": "Dev", "emoji": "🐱", "color": "#bb9af7", "trelloName": "Carla Dias" },
+    { "id": "manual:diego", "name": "Diego Alves", "role": "Dev", "emoji": "🐸", "color": "#e0af68", "trelloName": "Diego Alves" }
+  ]
+}

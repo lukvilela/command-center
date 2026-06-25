@@ -1,0 +1,53 @@
+name: Auto-refresh dashboard
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # a cada 30 minutos
+  workflow_dispatch:         # permite rodar manualmente
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run refresh (Trello API + GitHub sync)
+        env:
+          TRELLO_KEY: ${{ secrets.TRELLO_KEY }}
+          TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
+          TRELLO_BOARD_ID: ${{ secrets.TRELLO_BOARD_ID }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          # Cria .env temporário (necessário pro refresh.js)
+          echo "TRELLO_KEY=${TRELLO_KEY}" > .env
+          echo "TRELLO_TOKEN=${TRELLO_TOKEN}" >> .env
+          echo "TRELLO_BOARD_ID=${TRELLO_BOARD_ID}" >> .env
+          # Garante config.json existe (não vai pro git, então restaura do example se sumiu)
+          if [ ! -f config.json ]; then cp config.example.json config.json; fi
+          # Roda refresh
+          node refresh.js
+
+      - name: Commit if changed
+        run: |
+          git config user.name "tcc-bot"
+          git config user.email "bot@trello-command-center"
+          rm -f .env
+          if git diff --quiet data/; then
+            echo "Sem mudanças"
+          else
+            git add data/
+            git commit -m "chore: auto-refresh $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+            echo "✅ Push feito"
+          fi

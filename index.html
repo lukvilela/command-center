@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Command Center</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">🎯</div>
+      <div class="brand-text">
+        <div class="brand-title">Command Center</div>
+        <div class="brand-subtitle">multi-projeto</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="#/overview" class="nav-item" data-route="overview">
+        <span class="nav-icon">📊</span><span>Overview</span>
+        <span class="nav-badge" id="badge-overview"></span>
+      </a>
+      <a href="#/epics" class="nav-item" data-route="epics">
+        <span class="nav-icon">🎯</span><span>EPICs</span>
+      </a>
+      <a href="#/kanban" class="nav-item" data-route="kanban">
+        <span class="nav-icon">📋</span><span>Kanban</span>
+      </a>
+      <a href="#/roadmap" class="nav-item" data-route="roadmap">
+        <span class="nav-icon">🗺️</span><span>Roadmap</span>
+      </a>
+      <a href="#/cards" class="nav-item" data-route="cards">
+        <span class="nav-icon">🗂️</span><span>Cards</span>
+        <span class="nav-badge" id="badge-cards"></span>
+      </a>
+      <a href="#/devs" class="nav-item" data-route="devs">
+        <span class="nav-icon">👥</span><span>Equipe</span>
+      </a>
+      <a href="#/github" class="nav-item" data-route="github">
+        <span class="nav-icon">🐙</span><span>GitHub</span>
+        <span class="nav-badge" id="badge-github"></span>
+      </a>
+      <a href="#/timeline" class="nav-item" data-route="timeline">
+        <span class="nav-icon">⏱️</span><span>Timeline</span>
+      </a>
+      <a href="#/notes" class="nav-item" data-route="notes">
+        <span class="nav-icon">📝</span><span>Notas</span>
+      </a>
+      <a href="#/report" class="nav-item" data-route="report">
+        <span class="nav-icon">📊</span><span>Status Report</span>
+      </a>
+      <a href="#/docs" class="nav-item" data-route="docs">
+        <span class="nav-icon">📚</span><span>Docs</span>
+      </a>
+      <a href="#/settings" class="nav-item" data-route="settings">
+        <span class="nav-icon">⚙️</span><span>Configurações</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="user-badge" id="user-badge" title="Trocar usuário"></button>
+      <div class="status-card" id="status-card">
+        <div class="status-pill green" id="status-pill">carregando…</div>
+        <div class="status-meta" id="status-meta">—</div>
+      </div>
+      <button class="refresh-btn" id="refresh-btn" title="Recarrega dados (Ctrl+R)">
+        🔄 <span>Recarregar</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="search-wrap">
+        <input type="search" class="search" id="search" placeholder="🔎 Busca: id, título, dev, label, PR…" autocomplete="off">
+        <div class="search-results" id="search-results"></div>
+      </div>
+      <div class="topbar-right">
+        <a href="#" id="trello-link" target="_blank" class="ext-link" title="Abrir Trello">📌 Trello</a>
+        <a href="#" id="api-link" target="_blank" class="ext-link" title="Abrir repo API">📦 API</a>
+        <a href="#" id="web-link" target="_blank" class="ext-link" title="Abrir repo Web">📦 Web</a>
+      </div>
+    </header>
+
+    <div id="page" class="page">
+      <div class="loading">Carregando dados…</div>
+    </div>
+  </main>
+
+  <!-- Card detail modal -->
+  <div class="modal-overlay" id="modal" hidden>
+    <div class="modal" id="modal-content"></div>
+  </div>
+
+  <!-- Quick Add Card modal -->
+  <div class="modal-overlay" id="quick-add-modal" hidden>
+    <div class="modal" id="quick-add-content"></div>
+  </div>
+
+  <!-- Floating Action Button -->
+  <button class="fab" id="fab-add" title="Adicionar card (Ctrl+N)" aria-label="Adicionar card">
+    <span class="fab-icon">+</span>
+    <span class="fab-label">Novo card</span>
+  </button>
+
+  <!-- Batch action bar -->
+  <div class="batch-bar" id="batch-bar" style="display:none">
+    <span class="batch-count">0 cards</span>
+    <select id="batch-list-select"><option value="">Mover pra…</option></select>
+    <button id="batch-archive-btn" title="Arquivar todos os cards selecionados">📦 Arquivar</button>
+    <button id="batch-cancel-btn" title="Cancelar a seleção em massa">✕</button>
+  </div>
+
+  <!-- Toast notifications -->
+  <div class="toast-stack" id="toast-stack"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Modelo próprio (Supabase). Sem config.supabase → app cai no modo Trello. -->
+  <script type="module" src="supabase.js"></script>
+  <script src="native.js"></script>
+  <script src="connectors.js"></script>
+  <script src="connectors-gitlab.js"></script>
+  <script src="connectors-jira.js"></script>
+  <script src="automations.js"></script>
+  <script src="app.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>

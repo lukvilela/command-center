@@ -1,0 +1,33 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+  # Site estático — comando no-op EXPLÍCITO impede a auto-detecção de "Hugo"
+  # (a CLI confunde por causa do config.json/data/docs na raiz e roda `hugo`, que não existe).
+  command = "echo 'static site, no build needed'"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Dev local (netlify dev): site estático puro, sem auto-detecção de framework
+# (senão a CLI confunde com Hugo por causa de data/ e docs/).
+[dev]
+  framework = "#static"
+  publish = "."
+  port = 8888
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=60, must-revalidate"
+
+[[headers]]
+  for = "/notes.md"
+  [headers.values]
+    Cache-Control = "public, max-age=60, must-revalidate"

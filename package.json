@@ -1,0 +1,16 @@
+{
+  "name": "command-center",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kanban de gestão de projetos (config-driven), estilo Trello",
+  "scripts": {
+    "refresh": "node refresh.js",
+    "serve": "npx serve -l 8000 .",
+    "e2e": "playwright test",
+    "dev": "netlify dev"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "netlify-cli": "^26.1.0"
+  }
+}

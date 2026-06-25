@@ -1,0 +1,99 @@
+{
+  "_comment_supabase": "Preencha pra ativar o MODO NATIVO (modelo próprio multi-projeto). Vazio/REPLACE = cai no modo Trello legado. Ver SETUP-SUPABASE.md.",
+  "supabase": {
+    "url": "https://REPLACE_ME.supabase.co",
+    "anonKey": "REPLACE_ME"
+  },
+
+  "project": {
+    "name": "Meu Projeto",
+    "tagline": "Command Center",
+    "icon": "🎯",
+    "trelloBoardId": "REPLACE_ME",
+    "trelloBoardUrl": "https://trello.com/b/REPLACE_ME/seu-board",
+    "githubOrg": "REPLACE_ME",
+    "githubRepos": [
+      { "name": "api", "full": "REPLACE_ME/seu-projeto-api" },
+      { "name": "web", "full": "REPLACE_ME/seu-projeto-web" }
+    ],
+
+    "_comment_columns": "OPCIONAL. Mapeia ROLES (todo/doing/review/blocked/done) -> nomes reais das listas do SEU board. Sem isso, a heurística detecta por nome automaticamente. Role sem lista correspondente simplesmente não aparece (ex: projeto sem coluna 'Bloqueado' não mostra o box).",
+    "columns": {
+      "todo":    { "label": "A fazer",      "match": ["To-Do", "Backlog"] },
+      "doing":   { "label": "Em andamento", "match": ["In Progress", "Doing", "🐙 GitHub — Open"] },
+      "review":  { "label": "Review",       "match": ["Testing / Sandbox", "In Review", "QA"] },
+      "blocked": { "label": "Bloqueado",    "match": ["Blocked"] },
+      "done":    { "label": "Concluído",    "match": ["Done", "Deployed", "🐙 GitHub — Done"] }
+    },
+
+    "_comment_extras": "Todos OPCIONAIS.",
+    "wipLimit": 2,
+    "docsRepo": "owner/repo do repositório das docs (botão 'Editar no GitHub'). Vazio = esconde o link.",
+    "shortLists": { "Nome longo da lista no board": "Nome curto no display" },
+    "repoPrefix": "prefixo-a-esconder- (ex: se seus repos são 'meuapp-api'/'meuapp-web', use 'meuapp-')"
+  },
+
+  "team": [
+    {
+      "id": "manual:fulano",
+      "name": "Fulano da Silva",
+      "role": "Dev",
+      "emoji": "👨‍💻",
+      "color": "#58a6ff",
+      "trelloName": "Fulano da Silva",
+      "githubLogin": "fulano"
+    },
+    {
+      "id": "manual:beltrana",
+      "name": "Beltrana Santos",
+      "role": "Tech Lead",
+      "emoji": "🏗️",
+      "color": "#ff8a3d",
+      "trelloName": "Beltrana Santos",
+      "githubLogin": "beltrana"
+    },
+    {
+      "id": "manual:po",
+      "name": "Sicrano",
+      "role": "PO",
+      "emoji": "🎯",
+      "color": "#f0b938",
+      "trelloName": "Sicrano",
+      "githubLogin": null
+    },
+    {
+      "id": "manual:guest",
+      "name": "Visitante",
+      "role": "Apenas visualizar",
+      "emoji": "👁️",
+      "color": "#6e7681",
+      "trelloName": null,
+      "githubLogin": null
+    }
+  ],
+
+  "epics": {
+    "INFRA":     { "name": "Infraestrutura, DevOps & Segurança", "priority": "P0", "icon": "🛡️", "color": "#ff8a3d" },
+    "AUTH":      { "name": "Autenticação & Autorização",          "priority": "P0", "icon": "🔐", "color": "#58a6ff" },
+    "API":       { "name": "Backend / API",                        "priority": "P0", "icon": "⚙️", "color": "#56d364" },
+    "UI":        { "name": "Frontend / UX",                        "priority": "P1", "icon": "🎨", "color": "#a5d6a7" },
+    "FEATURE":   { "name": "Features de produto",                  "priority": "P1", "icon": "✨", "color": "#79c0ff" },
+    "BUG":       { "name": "Bugs",                                 "priority": "P0", "icon": "🐞", "color": "#f85149" },
+    "PERF":      { "name": "Performance",                          "priority": "P2", "icon": "⚡", "color": "#e3b341" },
+    "DOCS":      { "name": "Documentação",                          "priority": "P3", "icon": "📚", "color": "#6e7681" },
+    "TEST":      { "name": "Testes / QA",                          "priority": "P2", "icon": "🧪", "color": "#d2a8ff" },
+    "OUTROS":    { "name": "Outros",                                "priority": "P3", "icon": "📦", "color": "#6e7681" }
+  },
+
+  "personasByEpic": {
+    "INFRA": "DevOps / Tech Lead",
+    "AUTH": "Usuário do sistema",
+    "API": "Desenvolvedor / Cliente API",
+    "UI": "Usuário final",
+    "FEATURE": "Usuário final",
+    "BUG": "Usuário do sistema",
+    "PERF": "Usuário do sistema",
+    "DOCS": "Desenvolvedor",
+    "TEST": "QA / Desenvolvedor"
+  }
+}

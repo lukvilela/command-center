@@ -1,0 +1,1064 @@
+{
+  "boardName": "Demo Board",
+  "boardUrl": "#",
+  "refreshedAt": "2026-06-25T20:08:53.379Z",
+  "counts": {
+    "totalCards": 16,
+    "activeCards": 16,
+    "archivedCards": 0,
+    "byList": {
+      "Done": 4,
+      "In Progress": 3,
+      "Review": 2,
+      "Blocked": 1,
+      "To-Do": 3,
+      "Backlog": 3
+    },
+    "members": 4,
+    "labels": 6
+  },
+  "alerts": [
+    {
+      "severity": "warning",
+      "kind": "stale_in_progress",
+      "text": "#106 [API] Fix: rate limit no webhook — In Progress há 8 dias",
+      "cardId": "c106",
+      "idShort": 106,
+      "url": "#"
+    },
+    {
+      "severity": "warning",
+      "kind": "silent_blocked",
+      "text": "#110 [INFRA] Chore: pipeline de deploy — Bloqueado, sem update há 9 dias",
+      "cardId": "c110",
+      "idShort": 110,
+      "url": "#"
+    }
+  ],
+  "byDev": {
+    "Ana Souza": {
+      "inProgress": [
+        {
+          "idShort": 105,
+          "name": "[DATA] Feat: dashboard de métricas",
+          "url": "#"
+        }
+      ],
+      "sandbox": [
+        {
+          "idShort": 109,
+          "name": "[AUTH] Fix: refresh token expirando cedo",
+          "url": "#"
+        }
+      ],
+      "blocked": []
+    },
+    "Bruno Lima": {
+      "inProgress": [
+        {
+          "idShort": 106,
+          "name": "[API] Fix: rate limit no webhook",
+          "url": "#"
+        }
+      ],
+      "sandbox": [],
+      "blocked": [
+        {
+          "idShort": 110,
+          "name": "[INFRA] Chore: pipeline de deploy",
+          "url": "#"
+        }
+      ]
+    },
+    "Carla Dias": {
+      "inProgress": [
+        {
+          "idShort": 107,
+          "name": "[UI] Feat: drag-and-drop nas colunas",
+          "url": "#"
+        }
+      ],
+      "sandbox": [],
+      "blocked": []
+    },
+    "Diego Alves": {
+      "inProgress": [],
+      "sandbox": [
+        {
+          "idShort": 108,
+          "name": "[BILLING] Feat: checkout com Stripe",
+          "url": "#"
+        }
+      ],
+      "blocked": []
+    }
+  },
+  "cards": [
+    {
+      "id": "c101",
+      "idShort": 101,
+      "name": "[AUTH] Feat: login com OAuth (Google)",
+      "desc": "",
+      "url": "#",
+      "list": "Done",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "2 Alta",
+          "color": "orange"
+        }
+      ],
+      "members": [
+        {
+          "id": "m1",
+          "name": "Ana Souza",
+          "username": "ana"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-22T20:08:53.376Z",
+      "ageDays": 3,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "AUTH",
+      "tipo": "Feat",
+      "priorityNum": 2,
+      "priorityCode": "P1",
+      "status": "done",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c102",
+      "idShort": 102,
+      "name": "[API] Feat: busca com paginação e filtros",
+      "desc": "",
+      "url": "#",
+      "list": "Done",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "3 Média",
+          "color": "yellow"
+        }
+      ],
+      "members": [
+        {
+          "id": "m2",
+          "name": "Bruno Lima",
+          "username": "bruno"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-20T20:08:53.377Z",
+      "ageDays": 5,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "API",
+      "tipo": "Feat",
+      "priorityNum": 3,
+      "priorityCode": "P2",
+      "status": "done",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c103",
+      "idShort": 103,
+      "name": "[UI] Feat: tema escuro + tokens de design",
+      "desc": "",
+      "url": "#",
+      "list": "Done",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "3 Média",
+          "color": "yellow"
+        },
+        {
+          "name": "frontend",
+          "color": "sky"
+        }
+      ],
+      "members": [
+        {
+          "id": "m3",
+          "name": "Carla Dias",
+          "username": "carla"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-19T20:08:53.377Z",
+      "ageDays": 6,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "UI",
+      "tipo": "Feat",
+      "priorityNum": 3,
+      "priorityCode": "P2",
+      "status": "done",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c104",
+      "idShort": 104,
+      "name": "[CORE] Chore: setup do projeto + CI",
+      "desc": "",
+      "url": "#",
+      "list": "Done",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "infra",
+          "color": "lime"
+        }
+      ],
+      "members": [
+        {
+          "id": "m2",
+          "name": "Bruno Lima",
+          "username": "bruno"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-13T20:08:53.377Z",
+      "ageDays": 12,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "CORE",
+      "tipo": "Chore",
+      "priorityNum": 5,
+      "priorityCode": "P3",
+      "status": "done",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c105",
+      "idShort": 105,
+      "name": "[DATA] Feat: dashboard de métricas",
+      "desc": "",
+      "url": "#",
+      "list": "In Progress",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "2 Alta",
+          "color": "orange"
+        },
+        {
+          "name": "frontend",
+          "color": "sky"
+        }
+      ],
+      "members": [
+        {
+          "id": "m1",
+          "name": "Ana Souza",
+          "username": "ana"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-23T20:08:53.377Z",
+      "ageDays": 2,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "DATA",
+      "tipo": "Feat",
+      "priorityNum": 2,
+      "priorityCode": "P1",
+      "status": "in_progress",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c106",
+      "idShort": 106,
+      "name": "[API] Fix: rate limit no webhook",
+      "desc": "",
+      "url": "#",
+      "list": "In Progress",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "1 Crítico",
+          "color": "red"
+        },
+        {
+          "name": "backend",
+          "color": "purple"
+        }
+      ],
+      "members": [
+        {
+          "id": "m2",
+          "name": "Bruno Lima",
+          "username": "bruno"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-17T20:08:53.377Z",
+      "ageDays": 8,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "API",
+      "tipo": "Fix",
+      "priorityNum": 1,
+      "priorityCode": "P0",
+      "status": "in_progress",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c107",
+      "idShort": 107,
+      "name": "[UI] Feat: drag-and-drop nas colunas",
+      "desc": "",
+      "url": "#",
+      "list": "In Progress",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "3 Média",
+          "color": "yellow"
+        },
+        {
+          "name": "frontend",
+          "color": "sky"
+        }
+      ],
+      "members": [
+        {
+          "id": "m3",
+          "name": "Carla Dias",
+          "username": "carla"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-24T20:08:53.377Z",
+      "ageDays": 1,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "UI",
+      "tipo": "Feat",
+      "priorityNum": 3,
+      "priorityCode": "P2",
+      "status": "in_progress",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c108",
+      "idShort": 108,
+      "name": "[BILLING] Feat: checkout com Stripe",
+      "desc": "",
+      "url": "#",
+      "list": "Review",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "2 Alta",
+          "color": "orange"
+        },
+        {
+          "name": "backend",
+          "color": "purple"
+        }
+      ],
+      "members": [
+        {
+          "id": "m4",
+          "name": "Diego Alves",
+          "username": "diego"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-23T20:08:53.377Z",
+      "ageDays": 2,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "BILLING",
+      "tipo": "Feat",
+      "priorityNum": 2,
+      "priorityCode": "P1",
+      "status": "pending",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c109",
+      "idShort": 109,
+      "name": "[AUTH] Fix: refresh token expirando cedo",
+      "desc": "",
+      "url": "#",
+      "list": "Review",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "2 Alta",
+          "color": "orange"
+        }
+      ],
+      "members": [
+        {
+          "id": "m1",
+          "name": "Ana Souza",
+          "username": "ana"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-22T20:08:53.377Z",
+      "ageDays": 3,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "AUTH",
+      "tipo": "Fix",
+      "priorityNum": 2,
+      "priorityCode": "P1",
+      "status": "pending",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c110",
+      "idShort": 110,
+      "name": "[INFRA] Chore: pipeline de deploy",
+      "desc": "",
+      "url": "#",
+      "list": "Blocked",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "1 Crítico",
+          "color": "red"
+        },
+        {
+          "name": "infra",
+          "color": "lime"
+        }
+      ],
+      "members": [
+        {
+          "id": "m2",
+          "name": "Bruno Lima",
+          "username": "bruno"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-16T20:08:53.377Z",
+      "ageDays": 9,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "INFRA",
+      "tipo": "Chore",
+      "priorityNum": 1,
+      "priorityCode": "P0",
+      "status": "blocked",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c111",
+      "idShort": 111,
+      "name": "[API] Feat: integração com GitHub (PRs/runs)",
+      "desc": "",
+      "url": "#",
+      "list": "To-Do",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "2 Alta",
+          "color": "orange"
+        },
+        {
+          "name": "backend",
+          "color": "purple"
+        }
+      ],
+      "members": [
+        {
+          "id": "m4",
+          "name": "Diego Alves",
+          "username": "diego"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-24T20:08:53.377Z",
+      "ageDays": 1,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "API",
+      "tipo": "Feat",
+      "priorityNum": 2,
+      "priorityCode": "P1",
+      "status": "todo",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c112",
+      "idShort": 112,
+      "name": "[DATA] Feat: exportar relatório em CSV",
+      "desc": "",
+      "url": "#",
+      "list": "To-Do",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "3 Média",
+          "color": "yellow"
+        }
+      ],
+      "members": [
+        {
+          "id": "m3",
+          "name": "Carla Dias",
+          "username": "carla"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-24T20:08:53.377Z",
+      "ageDays": 1,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "DATA",
+      "tipo": "Feat",
+      "priorityNum": 3,
+      "priorityCode": "P2",
+      "status": "todo",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c113",
+      "idShort": 113,
+      "name": "[UI] Feat: modal de detalhe do card",
+      "desc": "",
+      "url": "#",
+      "list": "To-Do",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "3 Média",
+          "color": "yellow"
+        },
+        {
+          "name": "frontend",
+          "color": "sky"
+        }
+      ],
+      "members": [
+        {
+          "id": "m1",
+          "name": "Ana Souza",
+          "username": "ana"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-23T20:08:53.377Z",
+      "ageDays": 2,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "UI",
+      "tipo": "Feat",
+      "priorityNum": 3,
+      "priorityCode": "P2",
+      "status": "todo",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c114",
+      "idShort": 114,
+      "name": "[DOCS] Docs: guia de setup",
+      "desc": "",
+      "url": "#",
+      "list": "Backlog",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "3 Média",
+          "color": "yellow"
+        }
+      ],
+      "members": [
+        {
+          "id": "m4",
+          "name": "Diego Alves",
+          "username": "diego"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-21T20:08:53.377Z",
+      "ageDays": 4,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "DOCS",
+      "tipo": "Docs",
+      "priorityNum": 3,
+      "priorityCode": "P2",
+      "status": "backlog",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c115",
+      "idShort": 115,
+      "name": "[CORE] Refactor: store de estado",
+      "desc": "",
+      "url": "#",
+      "list": "Backlog",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "3 Média",
+          "color": "yellow"
+        },
+        {
+          "name": "backend",
+          "color": "purple"
+        }
+      ],
+      "members": [
+        {
+          "id": "m2",
+          "name": "Bruno Lima",
+          "username": "bruno"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-20T20:08:53.377Z",
+      "ageDays": 5,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "CORE",
+      "tipo": "Refactor",
+      "priorityNum": 3,
+      "priorityCode": "P2",
+      "status": "backlog",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    },
+    {
+      "id": "c116",
+      "idShort": 116,
+      "name": "[BILLING] Feat: webhooks de assinatura",
+      "desc": "",
+      "url": "#",
+      "list": "Backlog",
+      "listClosed": false,
+      "cardClosed": false,
+      "labels": [
+        {
+          "name": "2 Alta",
+          "color": "orange"
+        },
+        {
+          "name": "backend",
+          "color": "purple"
+        }
+      ],
+      "members": [
+        {
+          "id": "m4",
+          "name": "Diego Alves",
+          "username": "diego"
+        }
+      ],
+      "due": null,
+      "dueComplete": false,
+      "dateLastActivity": "2026-06-19T20:08:53.377Z",
+      "ageDays": 6,
+      "lastCommentDate": null,
+      "lastCommentAge": null,
+      "commentCount": 0,
+      "epic": "BILLING",
+      "tipo": "Feat",
+      "priorityNum": 2,
+      "priorityCode": "P1",
+      "status": "backlog",
+      "pop": null,
+      "dor": null,
+      "dod": null,
+      "invest": null,
+      "idChecklists": [],
+      "cover": null,
+      "attachments": [],
+      "badges": {}
+    }
+  ],
+  "epics": [
+    {
+      "name": "Núcleo & Fundação",
+      "priority": "P0",
+      "icon": "🧱",
+      "key": "CORE",
+      "total": 2,
+      "done": 1,
+      "testing": 0,
+      "inProgress": 0,
+      "blocked": 0,
+      "todo": 0,
+      "backlog": 1,
+      "icebox": 0,
+      "pending": 0,
+      "statusLabel": "🟡 PARCIAL",
+      "completionPct": 50
+    },
+    {
+      "name": "Autenticação & Acesso",
+      "priority": "P0",
+      "icon": "🔐",
+      "key": "AUTH",
+      "total": 2,
+      "done": 1,
+      "testing": 0,
+      "inProgress": 0,
+      "blocked": 0,
+      "todo": 0,
+      "backlog": 0,
+      "icebox": 0,
+      "pending": 1,
+      "statusLabel": "🟡 PARCIAL",
+      "completionPct": 50
+    },
+    {
+      "name": "Infra, DevOps & Segurança",
+      "priority": "P0",
+      "icon": "🛡️",
+      "key": "INFRA",
+      "total": 1,
+      "done": 0,
+      "testing": 0,
+      "inProgress": 0,
+      "blocked": 1,
+      "todo": 0,
+      "backlog": 0,
+      "icebox": 0,
+      "pending": 0,
+      "statusLabel": "⏸️ BLOQUEADA",
+      "completionPct": 0
+    },
+    {
+      "name": "API & Integrações",
+      "priority": "P1",
+      "icon": "🔌",
+      "key": "API",
+      "total": 3,
+      "done": 1,
+      "testing": 0,
+      "inProgress": 1,
+      "blocked": 0,
+      "todo": 1,
+      "backlog": 0,
+      "icebox": 0,
+      "pending": 0,
+      "statusLabel": "🟡 PARCIAL",
+      "completionPct": 33
+    },
+    {
+      "name": "UI & Design System",
+      "priority": "P1",
+      "icon": "🎨",
+      "key": "UI",
+      "total": 3,
+      "done": 1,
+      "testing": 0,
+      "inProgress": 1,
+      "blocked": 0,
+      "todo": 1,
+      "backlog": 0,
+      "icebox": 0,
+      "pending": 0,
+      "statusLabel": "🟡 PARCIAL",
+      "completionPct": 33
+    },
+    {
+      "name": "Dados & Relatórios",
+      "priority": "P1",
+      "icon": "📊",
+      "key": "DATA",
+      "total": 2,
+      "done": 0,
+      "testing": 0,
+      "inProgress": 1,
+      "blocked": 0,
+      "todo": 1,
+      "backlog": 0,
+      "icebox": 0,
+      "pending": 0,
+      "statusLabel": "🟡 PARCIAL",
+      "completionPct": 0
+    },
+    {
+      "name": "Pagamentos",
+      "priority": "P2",
+      "icon": "💰",
+      "key": "BILLING",
+      "total": 2,
+      "done": 0,
+      "testing": 0,
+      "inProgress": 0,
+      "blocked": 0,
+      "todo": 0,
+      "backlog": 1,
+      "icebox": 0,
+      "pending": 1,
+      "statusLabel": "🔴 PENDENTE",
+      "completionPct": 0
+    },
+    {
+      "name": "Documentação",
+      "priority": "P3",
+      "icon": "📚",
+      "key": "DOCS",
+      "total": 1,
+      "done": 0,
+      "testing": 0,
+      "inProgress": 0,
+      "blocked": 0,
+      "todo": 0,
+      "backlog": 1,
+      "icebox": 0,
+      "pending": 0,
+      "statusLabel": "🔴 PENDENTE",
+      "completionPct": 0
+    }
+  ],
+  "members": [
+    {
+      "id": "m1",
+      "name": "Ana Souza",
+      "username": "ana"
+    },
+    {
+      "id": "m2",
+      "name": "Bruno Lima",
+      "username": "bruno"
+    },
+    {
+      "id": "m3",
+      "name": "Carla Dias",
+      "username": "carla"
+    },
+    {
+      "id": "m4",
+      "name": "Diego Alves",
+      "username": "diego"
+    }
+  ],
+  "labels": [
+    {
+      "id": "lb1",
+      "name": "1 Crítico",
+      "color": "red"
+    },
+    {
+      "id": "lb2",
+      "name": "2 Alta",
+      "color": "orange"
+    },
+    {
+      "id": "lb3",
+      "name": "3 Média",
+      "color": "yellow"
+    },
+    {
+      "id": "lb4",
+      "name": "frontend",
+      "color": "sky"
+    },
+    {
+      "id": "lb5",
+      "name": "backend",
+      "color": "purple"
+    },
+    {
+      "id": "lb6",
+      "name": "infra",
+      "color": "lime"
+    }
+  ],
+  "lists": [
+    {
+      "id": "l1",
+      "name": "Backlog",
+      "closed": false,
+      "pos": 1
+    },
+    {
+      "id": "l2",
+      "name": "To-Do",
+      "closed": false,
+      "pos": 2
+    },
+    {
+      "id": "l3",
+      "name": "In Progress",
+      "closed": false,
+      "pos": 3
+    },
+    {
+      "id": "l4",
+      "name": "Review",
+      "closed": false,
+      "pos": 4
+    },
+    {
+      "id": "l5",
+      "name": "Blocked",
+      "closed": false,
+      "pos": 5
+    },
+    {
+      "id": "l6",
+      "name": "Done",
+      "closed": false,
+      "pos": 6
+    }
+  ],
+  "metrics": {
+    "leadTimes": [],
+    "avgLeadTime": 0,
+    "velocity": [],
+    "avgVelocity": 0,
+    "ageBuckets": {},
+    "cardHistory": {}
+  }
+}
